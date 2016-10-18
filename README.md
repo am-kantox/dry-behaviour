@@ -1,8 +1,66 @@
 # Dry::Behaviour
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/dry/behaviour`. To experiment with that code, run `bin/console` for an interactive prompt.
+[![Build Status](https://travis-ci.org/am-kantox/dry-behaviour.svg?branch=master)](https://travis-ci.org/am-kantox/dry-behaviour) | **Tiny library inspired by Elixir [`protocol`](http://elixir-lang.org/getting-started/protocols.html) pattern.**
 
-TODO: Delete this and the text above, and describe your gem
+## Declaration
+
+```ruby
+require 'dry/behaviour'
+
+module Protocols
+  module Adder
+    include Dry::Protocol
+
+    defprotocol do
+      defmethod :add, :this, :other
+      defmethod :subtract, :this, :other
+
+      def add_default(value)
+        add(3, 2) + value
+      end
+    end
+
+    defimpl Protocols::Adder, for: String do
+      def add(this, other)
+        this * other
+      end
+      def subtract(this, other)
+        this
+      end
+    end
+    defimpl Protocols::Adder, for: NilClass do
+      def add(this, other)
+        other
+      end
+      def subtract(this, other)
+        this
+      end
+    end
+
+    defimpl for: Integer do
+      def add(this, other)
+        this + other
+      end
+      def subtract(this, other)
+        this - other
+      end
+    end
+  end
+end
+```
+
+## Usage
+
+```ruby
+expect(Protocols::Adder.add(5, 3)).to eq(8)
+expect(Protocols::Adder.add(5, 10)).to eq(15)
+expect(Protocols::Adder.subtract(5, 10)).to eq(-5)
+expect(Protocols::Adder.add(15, 10)).to eq(25)
+expect(Protocols::Adder.add("!", 10)).to eq("!!!!!!!!!!")
+expect(Protocols::Adder.add(nil, 10)).to eq(10)
+
+expect(Protocols::Adder.add_default(1)).to eq(6)
+```
 
 ## Installation
 
@@ -20,10 +78,6 @@ Or install it yourself as:
 
     $ gem install dry-behaviour
 
-## Usage
-
-TODO: Write usage instructions here
-
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake spec` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
@@ -38,4 +92,3 @@ Bug reports and pull requests are welcome on GitHub at https://github.com/[USERN
 ## License
 
 The gem is available as open source under the terms of the [MIT License](http://opensource.org/licenses/MIT).
-
