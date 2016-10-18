@@ -6,8 +6,8 @@ require 'dry/behaviour/version'
 Gem::Specification.new do |spec|
   spec.name          = 'dry-behaviour'
   spec.version       = Dry::Behaviour::VERSION
-  spec.authors       = ['Aleksei Matiushkin']
-  spec.email         = ['aleksei.matiushkin@kantox.com']
+  spec.authors       = ['Aleksei Matiushkin', 'Saverio Trioni', 'Kantox LTD']
+  spec.email         = ['aleksei.matiushkin@kantox.com', 'saverio.trioni@kantox.com']
 
   spec.summary       = %(Tiny library inspired by Elixir protocol pattern.)
   spec.description   = %(This library makes it easy to declare protocols and use in in functional way.)

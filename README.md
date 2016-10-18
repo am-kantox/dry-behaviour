@@ -1,6 +1,8 @@
 # Dry::Behaviour
 
-[![Build Status](https://travis-ci.org/am-kantox/dry-behaviour.svg?branch=master)](https://travis-ci.org/am-kantox/dry-behaviour) | **Tiny library inspired by Elixir [`protocol`](http://elixir-lang.org/getting-started/protocols.html) pattern.**
+[![Build Status](https://travis-ci.org/am-kantox/dry-behaviour.svg?branch=master)](https://travis-ci.org/am-kantox/dry-behaviour)
+
+**Tiny library inspired by Elixir [`protocol`](http://elixir-lang.org/getting-started/protocols.html) pattern.**
 
 ## Declaration
 
@@ -61,6 +63,10 @@ expect(Protocols::Adder.add(nil, 10)).to eq(10)
 
 expect(Protocols::Adder.add_default(1)).to eq(6)
 ```
+
+## Authors
+
+@am-kantox, @saverio-kantox & @kantox
 
 ## Installation
 
