@@ -63,6 +63,7 @@ module Dry
         end
       end
     end
+    module_function :defimpl
 
     private
 
@@ -73,6 +74,7 @@ module Dry
       λ_map = ->(e) { e.is_a?(Array) && e.size == 2 ? [e.first.to_sym, e.last.to_sym] : nil }
       (md.map(&λ_delegate) | md.map(&λ_map)).compact.to_h
     end
+    module_function :normalize_map_delegates
   end
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/CyclomaticComplexity

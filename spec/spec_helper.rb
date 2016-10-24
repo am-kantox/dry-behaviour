@@ -29,20 +29,21 @@ module Protocols
         this.to_s
       end
     end
-    defimpl Protocols::Adder, target: NilClass do
-      def add(_this, other)
-        other
-      end
-
-      def subtract(this, _other)
-        this
-      end
-
-      def to_s(this)
-        this.to_s
-      end
-    end
 
     defimpl target: Integer, delegate: :to_s, map: { add: :+, subtract: :- }
+  end
+end
+
+Dry::Protocol.defimpl Protocols::Adder, target: NilClass do
+  def add(_this, other)
+    other
+  end
+
+  def subtract(this, _other)
+    this
+  end
+
+  def to_s(this)
+    this.to_s
   end
 end
