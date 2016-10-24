@@ -64,6 +64,17 @@ expect(Protocols::Adder.add_default(1)).to eq(6)
 
 ## Changelog
 
+### `0.2.0` :: implicit delegate on incomplete implementation
+
+when `defimpl` does not fully cover the protocol declaration,
+missing methods are implicitly delegated to the target,
+the warning is being issued:
+
+```ruby
+defimpl MyProto, target: MyClass, map: { add: :+, subtract: :- }
+#⇒ W, [2016-10-24T14:52:49.230808 #26382]  WARN -- : Implicit delegate MyProto#to_s to MyClass
+```
+
 ### `0.1.1` :: delegate and map methods to receiver
 
 `defimpl` now accepts `delegate` and `map`:
