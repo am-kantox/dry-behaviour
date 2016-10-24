@@ -68,7 +68,7 @@ module Dry
     private
 
     def normalize_map_delegates(delegate, map)
-      md = [*delegate].to_a | [*map].to_a
+      md = [*delegate, *map]
 
       λ_delegate = ->(e) { e.is_a?(Symbol) || e.is_a?(String) ? [e.to_sym, e.to_sym] : nil }
       λ_map = ->(e) { e.is_a?(Array) && e.size == 2 ? [e.first.to_sym, e.last.to_sym] : nil }
