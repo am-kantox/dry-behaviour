@@ -1,4 +1,8 @@
 module Dry
+  # rubocop:disable Style/VariableName
+  # rubocop:disable Style/AsciiIdentifiers
+  # rubocop:disable Style/MultilineBlockChain
+  # rubocop:disable Style/EmptyCaseCondiiton
   module BlackTie
     class << self
       def protocols
@@ -10,10 +14,8 @@ module Dry
       end
     end
 
-    def defprotocol(delegate: [])
+    def defprotocol
       raise if BlackTie.protocols.key?(self) # DUPLICATE DEF
-      raise unless block_given? || !delegate.empty?
-      # FIXME IMPLEMENT DELEGATES!
       raise unless block_given?
 
       ims = instance_methods(false)
@@ -30,19 +32,49 @@ module Dry
       end
     end
 
-    def defmethod name, *params
+    def defmethod(name, *params)
       BlackTie.protocols[self][name] = params
     end
 
-    def defimpl protocol = nil, **params
-      raise unless block_given?
-      raise if params[:for].nil?
+    def defimpl(protocol = nil, target: nil, delegate: [], map: {})
+      raise if target.nil?
+      raise if !block_given? && delegate.empty? && map.empty?
 
-      Module.new { singleton_class.class_eval(&Proc.new) }.tap do |mod|
+      mds = normalize_map_delegates(delegate, map)
+      Module.new do
+        mds.each do |k, v|
+          singleton_class.class_eval do
+            define_method k do |this, *args, **params, &λ|
+              case
+              when !args.empty? && !params.empty?
+                this.send(v, *args, **params, &λ)
+              when !args.empty? then this.send(v, *args, &λ)
+              when !params.empty? then this.send(v, **params, &λ)
+              else this.send(v, &λ)
+              end
+            end
+          end
+        end
+        singleton_class.class_eval(&Proc.new) if block_given? # block takes precedence
+      end.tap do |mod|
         mod.methods(false).each do |m|
-          BlackTie.implementations[protocol || self][params[:for]][m] = mod.method(m).to_proc
+          BlackTie.implementations[protocol || self][target][m] = mod.method(m).to_proc
         end
       end
     end
+
+    private
+
+    def normalize_map_delegates(delegate, map)
+      md = [*delegate].to_a | [*map].to_a
+
+      λ_delegate = ->(e) { e.is_a?(Symbol) || e.is_a?(String) ? [e.to_sym, e.to_sym] : nil }
+      λ_map = ->(e) { e.is_a?(Array) && e.size == 2 ? [e.first.to_sym, e.last.to_sym] : nil }
+      (md.map(&λ_delegate) | md.map(&λ_map)).compact.to_h
+    end
   end
+  # rubocop:enable Style/EmptyCaseCondiiton
+  # rubocop:enable Style/MultilineBlockChain
+  # rubocop:enable Style/AsciiIdentifiers
+  # rubocop:enable Style/VariableName
 end

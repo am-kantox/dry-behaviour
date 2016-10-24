@@ -9,36 +9,40 @@ module Protocols
     defprotocol do
       defmethod :add, :this, :other
       defmethod :subtract, :this, :other
+      defmethod :to_s, :this
 
       def add_default(value)
         add(3, 2) + value
       end
     end
 
-    defimpl Protocols::Adder, for: String do
+    defimpl Protocols::Adder, target: String do
       def add(this, other)
         this * other
       end
-      def subtract(this, other)
+
+      def subtract(this, _other)
         this
+      end
+
+      def to_s(this)
+        this.to_s
       end
     end
-    defimpl Protocols::Adder, for: NilClass do
-      def add(this, other)
+    defimpl Protocols::Adder, target: NilClass do
+      def add(_this, other)
         other
       end
-      def subtract(this, other)
+
+      def subtract(this, _other)
         this
+      end
+
+      def to_s(this)
+        this.to_s
       end
     end
 
-    defimpl for: Integer do
-      def add(this, other)
-        this + other
-      end
-      def subtract(this, other)
-        this - other
-      end
-    end
+    defimpl target: Integer, delegate: :to_s, map: { add: :+, subtract: :- }
   end
 end
