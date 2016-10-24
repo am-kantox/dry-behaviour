@@ -1,4 +1,11 @@
 module Dry
+  # rubocop:disable Style/VariableName
+  # rubocop:disable Style/AsciiIdentifiers
+  # rubocop:disable Style/MultilineBlockChain
+  # rubocop:disable Style/EmptyCaseCondition
+  # rubocop:disable Metrics/PerceivedComplexity
+  # rubocop:disable Metrics/CyclomaticComplexity
+  # rubocop:disable Metrics/AbcSize
   module BlackTie
     class << self
       def protocols
@@ -10,17 +17,15 @@ module Dry
       end
     end
 
-    def defprotocol(delegate: [])
+    def defprotocol
       raise if BlackTie.protocols.key?(self) # DUPLICATE DEF
-      raise unless block_given? || !delegate.empty?
-      # FIXME IMPLEMENT DELEGATES!
       raise unless block_given?
 
       ims = instance_methods(false)
       class_eval(&Proc.new)
       (instance_methods(false) - ims).each { |m| class_eval { module_function m } }
 
-      BlackTie.protocols[self].each do |method, *_| # FIXME CHECK PARAMS CORRESPONDENCE HERE
+      BlackTie.protocols[self].each do |method, *_| # FIXME: CHECK PARAMS CORRESPONDENCE HERE
         # receiver, *args = *args
         singleton_class.send :define_method, method do |receiver, *args|
           receiver.class.ancestors.lazy.map do |c|
@@ -30,19 +35,53 @@ module Dry
       end
     end
 
-    def defmethod name, *params
+    def defmethod(name, *params)
       BlackTie.protocols[self][name] = params
     end
 
-    def defimpl protocol = nil, **params
-      raise unless block_given?
-      raise if params[:for].nil?
+    def defimpl(protocol = nil, target: nil, delegate: [], map: {})
+      raise if target.nil? || !block_given? && delegate.empty? && map.empty?
 
-      Module.new { singleton_class.class_eval(&Proc.new) }.tap do |mod|
+      mds = normalize_map_delegates(delegate, map)
+      Module.new do
+        mds.each do |k, v|
+          singleton_class.class_eval do
+            define_method k do |this, *args, **params, &λ|
+              case
+              when !args.empty? && !params.empty? then this.send(v, *args, **params, &λ)
+              when !args.empty? then this.send(v, *args, &λ)
+              when !params.empty? then this.send(v, **params, &λ)
+              else this.send(v, &λ)
+              end
+            end
+          end
+        end
+        singleton_class.class_eval(&Proc.new) if block_given? # block takes precedence
+      end.tap do |mod|
         mod.methods(false).each do |m|
-          BlackTie.implementations[protocol || self][params[:for]][m] = mod.method(m).to_proc
+          BlackTie.implementations[protocol || self][target][m] = mod.method(m).to_proc
         end
       end
     end
+    module_function :defimpl
+
+    private
+
+    def normalize_map_delegates(delegate, map)
+      [*delegate, *map].map do |e|
+        case e
+        when Symbol, String then [e.to_sym] * 2
+        when Array then e.map(&:to_sym) if e.size == 2
+        end
+      end.compact
+    end
+    module_function :normalize_map_delegates
   end
+  # rubocop:enable Metrics/AbcSize
+  # rubocop:enable Metrics/CyclomaticComplexity
+  # rubocop:enable Metrics/PerceivedComplexity
+  # rubocop:enable Style/EmptyCaseCondition
+  # rubocop:enable Style/MultilineBlockChain
+  # rubocop:enable Style/AsciiIdentifiers
+  # rubocop:enable Style/VariableName
 end

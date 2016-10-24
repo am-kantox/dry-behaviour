@@ -39,14 +39,8 @@ module Protocols
       end
     end
 
-    defimpl for: Integer do
-      def add(this, other)
-        this + other
-      end
-      def subtract(this, other)
-        this - other
-      end
-    end
+    # delegate `to_s` as is, map `add` and `subtract` to `:+` and `:-` respectively
+    defimpl target: Integer, delegate: :to_s, map: { add: :+, subtract: :- }
   end
 end
 ```
@@ -67,6 +61,16 @@ expect(Protocols::Adder.add_default(1)).to eq(6)
 ## Authors
 
 @am-kantox, @saverio-kantox & @kantox
+
+## Changelog
+
+### `0.1.1` :: delegate and map methods to receiver
+
+`defimpl` now accepts `delegate` and `map`:
+
+```ruby
+defimpl MyProto, target: MyClass, delegate: :to_s, map: { add: :+, subtract: :- }
+```
 
 ## Installation
 
