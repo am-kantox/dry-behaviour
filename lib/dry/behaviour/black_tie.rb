@@ -68,11 +68,12 @@ module Dry
     private
 
     def normalize_map_delegates(delegate, map)
-      md = [*delegate, *map]
-
-      λ_delegate = ->(e) { e.is_a?(Symbol) || e.is_a?(String) ? [e.to_sym, e.to_sym] : nil }
-      λ_map = ->(e) { e.is_a?(Array) && e.size == 2 ? [e.first.to_sym, e.last.to_sym] : nil }
-      (md.map(&λ_delegate) | md.map(&λ_map)).compact.to_h
+      [*delegate, *map].map do |e|
+        case e
+        when Symbol, String then [e.to_sym] * 2
+        when Array then e.map(&:to_sym) if e.size == 2
+        end
+      end.compact
     end
     module_function :normalize_map_delegates
   end
