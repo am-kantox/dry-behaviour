@@ -24,10 +24,6 @@ module Protocols
       def subtract(this, _other)
         this
       end
-
-      def to_s(this)
-        this.to_s
-      end
     end
 
     defimpl target: Integer, delegate: :to_s, map: { add: :+, subtract: :- }

@@ -1,5 +1,4 @@
 module Dry
-  # rubocop:disable Style/VariableName
   # rubocop:disable Style/AsciiIdentifiers
   # rubocop:disable Style/MultilineBlockChain
   # rubocop:disable Style/EmptyCaseCondition
@@ -30,7 +29,7 @@ module Dry
         singleton_class.send :define_method, method do |receiver, *args|
           receiver.class.ancestors.lazy.map do |c|
             BlackTie.implementations[self].fetch(c, nil)
-          end.reject(&:nil?).first[method].(receiver, *args)
+          end.reject(&:nil?).first[method].(*args.unshift(receiver))
         end
       end
     end
@@ -39,26 +38,34 @@ module Dry
       BlackTie.protocols[self][name] = params
     end
 
+    DELEGATE_METHOD = lambda do |klazz, (source, target)|
+      klazz.class_eval do
+        define_method source do |this, *args, **params, &λ|
+          case
+          when !args.empty? && !params.empty? then this.send(target, *args, **params, &λ)
+          when !args.empty? then this.send(target, *args, &λ)
+          when !params.empty? then this.send(target, **params, &λ)
+          else this.send(target, &λ)
+          end
+        end
+      end
+    end
+
     def defimpl(protocol = nil, target: nil, delegate: [], map: {})
       raise if target.nil? || !block_given? && delegate.empty? && map.empty?
 
       mds = normalize_map_delegates(delegate, map)
       Module.new do
-        mds.each do |k, v|
-          singleton_class.class_eval do
-            define_method k do |this, *args, **params, &λ|
-              case
-              when !args.empty? && !params.empty? then this.send(v, *args, **params, &λ)
-              when !args.empty? then this.send(v, *args, &λ)
-              when !params.empty? then this.send(v, **params, &λ)
-              else this.send(v, &λ)
-              end
-            end
-          end
-        end
+        mds.each(&DELEGATE_METHOD.curry[singleton_class])
         singleton_class.class_eval(&Proc.new) if block_given? # block takes precedence
       end.tap do |mod|
-        mod.methods(false).each do |m|
+        mod.methods(false).tap do |meths|
+          (BlackTie.protocols[protocol || self].keys - meths).each_with_object(meths) do |m, acc|
+            safe_logger.warn("Implicit delegate #{(protocol || self).inspect}##{m} to #{target}")
+            DELEGATE_METHOD.(mod.singleton_class, [m] * 2)
+            acc << m
+          end
+        end.each do |m|
           BlackTie.implementations[protocol || self][target][m] = mod.method(m).to_proc
         end
       end
@@ -66,6 +73,15 @@ module Dry
     module_function :defimpl
 
     private
+
+    def safe_logger
+      if Kernel.const_defined?('::Rails')
+        Rails.logger
+      else
+        require 'logger'
+        Logger.new($stdout)
+      end
+    end
 
     def normalize_map_delegates(delegate, map)
       [*delegate, *map].map do |e|
@@ -83,5 +99,4 @@ module Dry
   # rubocop:enable Style/EmptyCaseCondition
   # rubocop:enable Style/MultilineBlockChain
   # rubocop:enable Style/AsciiIdentifiers
-  # rubocop:enable Style/VariableName
 end

@@ -14,6 +14,7 @@ describe Dry::Behaviour do
     expect(Protocols::Adder.add(nil, 10)).to eq(10)
 
     expect(Protocols::Adder.to_s(5)).to eq('5')
+    expect(Protocols::Adder.to_s('¡Yay!')).to eq('¡Yay!')
 
     expect(Protocols::Adder.add_default(1)).to eq(6)
   end
