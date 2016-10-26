@@ -66,7 +66,9 @@ module Dry
             acc << m
           end
         end.each do |m|
-          BlackTie.implementations[protocol || self][target][m] = mod.method(m).to_proc
+          [*target].each do |tgt|
+            BlackTie.implementations[protocol || self][tgt][m] = mod.method(m).to_proc
+          end
         end
       end
     end

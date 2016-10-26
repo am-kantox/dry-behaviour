@@ -26,7 +26,7 @@ module Protocols
       end
     end
 
-    defimpl target: Integer, delegate: :to_s, map: { add: :+, subtract: :- }
+    defimpl target: [Integer, Float], delegate: :to_s, map: { add: :+, subtract: :- }
   end
 end
 

@@ -22,7 +22,7 @@ module Protocols
       end
     end
 
-    defimpl Protocols::Adder, for: String do
+    defimpl Protocols::Adder, target: String do
       def add(this, other)
         this * other
       end
@@ -30,7 +30,7 @@ module Protocols
         this
       end
     end
-    defimpl Protocols::Adder, for: NilClass do
+    defimpl Protocols::Adder, target: NilClass do
       def add(this, other)
         other
       end
@@ -63,6 +63,14 @@ expect(Protocols::Adder.add_default(1)).to eq(6)
 @am-kantox, @saverio-kantox & @kantox
 
 ## Changelog
+
+### `0.2.1` :: multiple targets
+
+#### Multiple targets:
+
+```ruby
+defimpl MyProto, target: [MyClass1, MyClass2], delegate: [:add, :subtract]
+```
 
 ### `0.2.0` :: implicit delegate on incomplete implementation
 
