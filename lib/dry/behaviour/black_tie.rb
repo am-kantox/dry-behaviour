@@ -24,12 +24,18 @@ module Dry
       class_eval(&Proc.new)
       (instance_methods(false) - ims).each { |m| class_eval { module_function m } }
 
+      singleton_class.send :define_method, :method_missing do |method, *args|
+        raise Dry::Protocol::NotImplemented.new(:method, self.inspect, method)
+      end
+
       BlackTie.protocols[self].each do |method, *_| # FIXME: CHECK PARAMS CORRESPONDENCE HERE
-        # receiver, *args = *args
-        singleton_class.send :define_method, method do |receiver, *args|
-          receiver.class.ancestors.lazy.map do |c|
+        singleton_class.send :define_method, method do |receiver = nil, *args|
+          impl = receiver.class.ancestors.lazy.map do |c|
             BlackTie.implementations[self].fetch(c, nil)
-          end.reject(&:nil?).first[method].(*args.unshift(receiver))
+          end.reject(&:nil?).first
+
+          raise Dry::Protocol::NotImplemented.new(:protocol, self.inspect, receiver.class) unless impl
+          impl[method].(*args.unshift(receiver))
         end
       end
     end

@@ -1,4 +1,5 @@
 require 'dry/behaviour/version'
+require 'dry/errors/not_implemented'
 require 'dry/behaviour/black_tie'
 
 module Dry

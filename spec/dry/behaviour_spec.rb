@@ -18,4 +18,19 @@ describe Dry::Behaviour do
 
     expect(Protocols::Adder.add_default(1)).to eq(6)
   end
+
+  it 'throws a meaningful error on wrong usage' do
+    expect { Protocols::Adder.hello(5, 42)}.to raise_error(
+      Dry::Protocol::NotImplemented,
+      "Protocol “Protocols::Adder” does not declare method “hello”."
+    )
+    expect { Protocols::Adder.add({}, 42)}.to raise_error(
+      Dry::Protocol::NotImplemented,
+      "Protocol “Protocols::Adder” is not implemented for “Hash”."
+    )
+    expect { Protocols::Adder.hello({}, 42)}.to raise_error(
+      Dry::Protocol::NotImplemented,
+      "Protocol “Protocols::Adder” does not declare method “hello”."
+    )
+  end
 end

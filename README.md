@@ -64,6 +64,17 @@ expect(Protocols::Adder.add_default(1)).to eq(6)
 
 ## Changelog
 
+### `0.2.2` :: meaningful errors
+
+#### Throws an exception on wrong usage:
+
+```ruby
+Protocols::Adder.add({}, 42)
+#⇒ Protocols::NotImplemented: Protocol “Protocols::Adder” is not implemented for “Hash”
+Protocols::Adder.hello({}, 42)
+#⇒ Protocols::NotImplemented: Protocol “Protocols::Adder” does not declare method “hello”
+```
+
 ### `0.2.1` :: multiple targets
 
 #### Multiple targets:
