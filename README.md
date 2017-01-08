@@ -64,6 +64,8 @@ expect(Protocols::Adder.add_default(1)).to eq(6)
 
 ## Changelog
 
+### `0.3.1` :: `implemented_for?` and `implementation_for`
+
 ### `0.3.0` :: version bump
 
 ### `0.2.2` :: meaningful errors

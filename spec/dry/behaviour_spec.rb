@@ -19,6 +19,13 @@ describe Dry::Behaviour do
     expect(Protocols::Adder.add_default(1)).to eq(6)
   end
 
+  it 'responds to `implemented_for?` properly' do
+    expect(Protocols::Adder.implementation_for(5)).to be_truthy
+    expect(Protocols::Adder.implementation_for({a: 42})).to be_nil
+    expect(::Dry::Protocol.implemented_for?(Protocols::Adder, 5)).to eq(true)
+    expect(::Dry::Protocol.implemented_for?(Protocols::Adder, [:a, 42])).to eq(false)
+  end
+
   it 'throws a meaningful error on wrong usage' do
     expect { Protocols::Adder.hello(5, 42)}.to raise_error(
       Dry::Protocol::NotImplemented,
@@ -31,6 +38,10 @@ describe Dry::Behaviour do
     expect { Protocols::Adder.hello({}, 42)}.to raise_error(
       Dry::Protocol::NotImplemented,
       "Protocol “Protocols::Adder” does not declare method “hello”."
+    )
+    expect { ::Dry::Protocol.implemented_for?(Integer, 5) }.to raise_error(
+      ::Dry::Protocol::NotProtocol,
+      "“Integer” is not a protocol."
     )
   end
 end

@@ -28,11 +28,15 @@ module Dry
         raise Dry::Protocol::NotImplemented.new(:method, self.inspect, method)
       end
 
+      singleton_class.send :define_method, :implementation_for do |receiver|
+        receiver.class.ancestors.lazy.map do |c|
+          BlackTie.implementations[self].fetch(c, nil)
+        end.reject(&:nil?).first
+      end
+
       BlackTie.protocols[self].each do |method, *_| # FIXME: CHECK PARAMS CORRESPONDENCE HERE
         singleton_class.send :define_method, method do |receiver = nil, *args|
-          impl = receiver.class.ancestors.lazy.map do |c|
-            BlackTie.implementations[self].fetch(c, nil)
-          end.reject(&:nil?).first
+          impl = implementation_for(receiver)
 
           raise Dry::Protocol::NotImplemented.new(:protocol, self.inspect, receiver.class) unless impl
           impl[method].(*args.unshift(receiver))

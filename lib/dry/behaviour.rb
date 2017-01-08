@@ -1,5 +1,6 @@
 require 'dry/behaviour/version'
 require 'dry/errors/not_implemented'
+require 'dry/errors/not_protocol'
 require 'dry/behaviour/black_tie'
 
 module Dry
@@ -14,6 +15,11 @@ module Dry
         Dry::BlackTie.defimpl(protocol, target: target, delegate: delegate, map: map, &λ)
       end
       # rubocop:enable Style/AsciiIdentifiers
+
+      def implemented_for?(protocol, receiver)
+        raise NotProtocol.new(protocol) unless protocol < ::Dry::Protocol
+        !protocol.implementation_for(receiver).nil?
+      end
     end
   end
 end
