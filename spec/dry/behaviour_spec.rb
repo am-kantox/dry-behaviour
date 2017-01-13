@@ -49,7 +49,7 @@ describe Dry::Behaviour do
     )
     expect { Protocols::Adder.crossreferenced(nil, true) } .to raise_error(
       Dry::Protocol::NotImplemented,
-      'Protocol “Protocols::Adder” does not declare method “crossreferenced (wrong number of arguments (2 for 1))”.'
+      /Protocol “Protocols::Adder” does not declare method “crossreferenced \(wrong number of arguments/
     )
     expect { Protocols::Adder.crossreferenced(42, 3.14) } .to raise_error(
       Dry::Protocol::NotImplemented,
