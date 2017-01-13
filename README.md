@@ -64,6 +64,29 @@ expect(Protocols::Adder.add_default(1)).to eq(6)
 
 ## Changelog
 
+### `0.4.0` :: Protocol-wide methods are allowed to call from inside implementation
+
+```ruby
+module Protocols::Adder
+  include Dry::Protocol
+
+  defprotocol do
+    defmethod :add, :this, :other
+    def default
+      42
+    end
+  end
+end
+
+Dry::Protocol.defimpl target: Integer do
+  def add(this)
+    this + default #⇒ 47 when called as Protocols::Adder.add(5)
+  end
+end
+```
+
+**NB** At the moment works only for external `defimpl`.
+
 ### `0.3.1` :: `implemented_for?` and `implementation_for`
 
 ### `0.3.0` :: version bump

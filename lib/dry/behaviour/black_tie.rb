@@ -5,6 +5,7 @@ module Dry
   # rubocop:disable Metrics/PerceivedComplexity
   # rubocop:disable Metrics/CyclomaticComplexity
   # rubocop:disable Metrics/AbcSize
+  # rubocop:disable Style/MethodName
   module BlackTie
     class << self
       def protocols
@@ -24,8 +25,8 @@ module Dry
       class_eval(&Proc.new)
       (instance_methods(false) - ims).each { |m| class_eval { module_function m } }
 
-      singleton_class.send :define_method, :method_missing do |method, *args|
-        raise Dry::Protocol::NotImplemented.new(:method, self.inspect, method)
+      singleton_class.send :define_method, :method_missing do |method, *_args|
+        raise Dry::Protocol::NotImplemented.new(:method, inspect, method)
       end
 
       singleton_class.send :define_method, :implementation_for do |receiver|
@@ -38,8 +39,14 @@ module Dry
         singleton_class.send :define_method, method do |receiver = nil, *args|
           impl = implementation_for(receiver)
 
-          raise Dry::Protocol::NotImplemented.new(:protocol, self.inspect, receiver.class) unless impl
-          impl[method].(*args.unshift(receiver))
+          raise Dry::Protocol::NotImplemented.new(:protocol, inspect, receiver.class) unless impl
+          begin
+            impl[method].(*args.unshift(receiver))
+          rescue NoMethodError => e
+            raise Dry::Protocol::NotImplemented.new(:method, inspect, e.message)
+          rescue ArgumentError => e
+            raise Dry::Protocol::NotImplemented.new(:method, inspect, "#{method} (#{e.message})")
+          end
         end
       end
     end
@@ -68,32 +75,39 @@ module Dry
       Module.new do
         mds.each(&DELEGATE_METHOD.curry[singleton_class])
         singleton_class.class_eval(&Proc.new) if block_given? # block takes precedence
+        if protocol
+          extend protocol
+        else # FIXME:
+          BlackTie.Logger.warn('Cross-calling protocol methods is not yet implemented for inplace declarated implementations.')
+        end
       end.tap do |mod|
+        protocol ||= self
+
         mod.methods(false).tap do |meths|
-          (BlackTie.protocols[protocol || self].keys - meths).each_with_object(meths) do |m, acc|
-            safe_logger.warn("Implicit delegate #{(protocol || self).inspect}##{m} to #{target}")
+          (BlackTie.protocols[protocol].keys - meths).each_with_object(meths) do |m, acc|
+            BlackTie.Logger.warn("Implicit delegate #{protocol.inspect}##{m} to #{target}")
             DELEGATE_METHOD.(mod.singleton_class, [m] * 2)
             acc << m
           end
         end.each do |m|
           [*target].each do |tgt|
-            BlackTie.implementations[protocol || self][tgt][m] = mod.method(m).to_proc
+            BlackTie.implementations[protocol][tgt][m] = mod.method(m).to_proc
           end
         end
       end
     end
     module_function :defimpl
 
-    private
-
-    def safe_logger
-      if Kernel.const_defined?('::Rails')
-        Rails.logger
-      else
-        require 'logger'
-        Logger.new($stdout)
-      end
+    def self.Logger
+      @logger ||= if Kernel.const_defined?('::Rails')
+                    Rails.logger
+                  else
+                    require 'logger'
+                    Logger.new($stdout)
+                  end
     end
+
+    private
 
     def normalize_map_delegates(delegate, map)
       [*delegate, *map].map do |e|
@@ -105,6 +119,7 @@ module Dry
     end
     module_function :normalize_map_delegates
   end
+  # rubocop:enable Style/MethodName
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/CyclomaticComplexity
   # rubocop:enable Metrics/PerceivedComplexity

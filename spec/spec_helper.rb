@@ -9,6 +9,7 @@ module Protocols
     defprotocol do
       defmethod :add, :this, :other
       defmethod :subtract, :this, :other
+      defmethod :crossreferenced, :this
       defmethod :to_s, :this
 
       def add_default(value)
@@ -41,5 +42,10 @@ Dry::Protocol.defimpl Protocols::Adder, target: NilClass do
 
   def to_s(this)
     this.to_s
+  end
+
+  def crossreferenced(this)
+    # add_default(this)
+    add(this, add_default(5))
   end
 end
