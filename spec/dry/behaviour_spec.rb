@@ -53,7 +53,7 @@ describe Dry::Behaviour do
     )
     expect { Protocols::Adder.crossreferenced(42, 3.14) } .to raise_error(
       Dry::Protocol::NotImplemented,
-      'Protocol “Protocols::Adder” does not declare method “undefined method `crossreferenced\' for 42:Fixnum”.'
+      /Protocol “Protocols::Adder” does not declare method “undefined method `crossreferenced' for 42:/
     )
   end
 end
