@@ -68,20 +68,27 @@ module Dry
       end
     end
 
+    POSTPONE_EXTEND = lambda do |target, protocol|
+      TracePoint.new(:end) do |tp|
+        if tp.self == protocol
+          puts "#{tp.self.inspect} | #{protocol.name}"
+          target.extend protocol
+          tp.disable
+        end
+      end.enable
+    end
+
+
     def defimpl(protocol = nil, target: nil, delegate: [], map: {})
       raise if target.nil? || !block_given? && delegate.empty? && map.empty?
 
       mds = normalize_map_delegates(delegate, map)
+
       Module.new do
         mds.each(&DELEGATE_METHOD.curry[singleton_class])
         singleton_class.class_eval(&Proc.new) if block_given? # block takes precedence
-        if protocol
-          extend protocol
-        else # FIXME:
-          BlackTie.Logger.warn('Cross-calling protocol methods is not yet implemented for inplace declarated implementations.')
-        end
       end.tap do |mod|
-        protocol ||= self
+        protocol ? mod.extend(protocol) : POSTPONE_EXTEND.(mod, protocol = self)
 
         mod.methods(false).tap do |meths|
           (BlackTie.protocols[protocol].keys - meths).each_with_object(meths) do |m, acc|

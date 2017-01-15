@@ -27,7 +27,11 @@ module Protocols
       end
     end
 
-    defimpl target: [Integer, Float], delegate: :to_s, map: { add: :+, subtract: :- }
+    defimpl target: [Integer, Float], delegate: :to_s, map: { add: :+, subtract: :- } do
+      def crossreferenced(this)
+        add(add_default(this), this)
+      end
+    end
   end
 end
 

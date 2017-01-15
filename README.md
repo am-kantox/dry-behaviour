@@ -64,6 +64,10 @@ expect(Protocols::Adder.add_default(1)).to eq(6)
 
 ## Changelog
 
+### `0.4.1` :: Protocol-wide methods are allowed to call from implementation
+
+**NB** Works for all `defimpl`s.
+
 ### `0.4.0` :: Protocol-wide methods are allowed to call from inside implementation
 
 ```ruby
