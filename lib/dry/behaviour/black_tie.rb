@@ -71,7 +71,6 @@ module Dry
     POSTPONE_EXTEND = lambda do |target, protocol|
       TracePoint.new(:end) do |tp|
         if tp.self == protocol
-          puts "#{tp.self.inspect} | #{protocol.name}"
           target.extend protocol
           tp.disable
         end
