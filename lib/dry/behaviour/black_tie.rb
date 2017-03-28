@@ -38,7 +38,6 @@ module Dry
       BlackTie.protocols[self].each do |method, *_| # FIXME: CHECK PARAMS CORRESPONDENCE HERE
         singleton_class.send :define_method, method do |receiver = nil, *args|
           impl = implementation_for(receiver)
-
           raise Dry::Protocol::NotImplemented.new(:protocol, inspect, receiver.class) unless impl
           begin
             impl[method].(*args.unshift(receiver))
@@ -76,7 +75,6 @@ module Dry
         end
       end.enable
     end
-
 
     def defimpl(protocol = nil, target: nil, delegate: [], map: {})
       raise if target.nil? || !block_given? && delegate.empty? && map.empty?

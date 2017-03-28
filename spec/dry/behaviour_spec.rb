@@ -31,6 +31,11 @@ describe Dry::Behaviour do
     expect(Protocols::Adder.crossreferenced(3.14).round(2)).to eq(11.28)
   end
 
+  it 'derives calls from inherited protocol and overrides them' do
+    expect(Protocols::Adder.foo(42)).to eq('★42★')
+    expect(Protocols::Adder.foo(nil)).to eq('☆nil☆')
+  end
+
   it 'throws a meaningful error on wrong usage' do
     expect { Protocols::Adder.hello(5, 42) }.to raise_error(
       Dry::Protocol::NotImplemented,
