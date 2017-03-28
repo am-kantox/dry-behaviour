@@ -27,7 +27,7 @@ describe Dry::Behaviour do
   end
 
   it 'allows to call protocol-wide methods from inside implementation' do
-    expect(Protocols::Adder.crossreferenced(nil)).to eq(7)
+    expect(Protocols::Adder.crossreferenced(nil)).to eq(47)
     expect(Protocols::Adder.crossreferenced(3.14).round(2)).to eq(11.28)
   end
 
@@ -52,7 +52,7 @@ describe Dry::Behaviour do
       Dry::Protocol::NotImplemented,
       /Protocol “Protocols::Adder” does not declare method “crossreferenced \(wrong number of arguments/
     )
-    expect { Protocols::Adder.crossreferenced("42", "3.14") } .to raise_error(
+    expect { Protocols::Adder.crossreferenced('42', '3.14') } .to raise_error(
       Dry::Protocol::NotImplemented,
       /Protocol “Protocols::Adder” does not declare method “undefined method `crossreferenced' for "42":/
     )

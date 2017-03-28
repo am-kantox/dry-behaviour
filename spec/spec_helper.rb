@@ -48,6 +48,10 @@ Dry::Protocol.defimpl Protocols::Adder, target: NilClass do
     this.to_s
   end
 
+  def add_default(value)
+    add(13, 42) + value
+  end
+
   def crossreferenced(this)
     # add_default(this)
     add(this, add_default(5))
