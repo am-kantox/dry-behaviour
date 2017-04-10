@@ -64,6 +64,8 @@ expect(Protocols::Adder.add_default(1)).to eq(6)
 
 ## Changelog
 
+### `0.5.0` :: Guards
+
 ### `0.4.2` :: Removed the forgotten debug output :(
 
 ### `0.4.1` :: Protocol-wide methods are allowed to call from implementation

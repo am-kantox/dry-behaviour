@@ -2,11 +2,12 @@ require 'dry/behaviour/version'
 require 'dry/errors/not_implemented'
 require 'dry/errors/not_protocol'
 require 'dry/behaviour/black_tie'
+require 'dry/behaviour/cerberus'
 
 module Dry
   module Protocol
     def self.included(base)
-      base.singleton_class.prepend(Dry::BlackTie)
+      base.singleton_class.prepend(::Dry::BlackTie)
     end
 
     class << self
@@ -20,6 +21,12 @@ module Dry
         raise NotProtocol.new(protocol) unless protocol < ::Dry::Protocol
         !protocol.implementation_for(receiver).nil?
       end
+    end
+  end
+
+  module Guards
+    def self.included(base)
+      base.singleton_class.prepend(::Dry::Cerberus)
     end
   end
 end
