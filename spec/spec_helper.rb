@@ -69,3 +69,40 @@ Dry::Protocol.defimpl Protocols::Adder, target: NilClass do
     add(this, add_default(5))
   end
 end
+
+class GuardTest
+  include Dry::Guards
+  # rubocop:disable Metrics/ParameterLists
+  # rubocop:disable Lint/UnusedMethodArgument
+  # rubocop:disable Lint/DuplicateMethods
+  # rubocop:disable Style/EmptyLineBetweenDefs
+  def a(p, p2 = nil, *_a, when: { p: Integer, p2: String }, **_b, &cb)
+    1
+  end
+  def a(p, _p2 = nil, *_a, when: { p: Float }, **_b, &cb)
+    3
+  end
+  def a(p, _p2 = nil, *_a, when: { p: ->(v) { v < 42 } }, **_b, &cb)
+    4
+  end
+  def a(p, _p2 = nil, *_a, when: { p: Integer }, **_b, &cb)
+    2
+  end
+  def a(_p, _p2 = nil, *_a, when: { cb: ->(v) { !v.nil? } }, **_b, &cb)
+    5
+  end
+  def a(p1, p2, p3)
+    6
+  end
+  def a(p, _p2 = nil, *_a, **_b, &cb)
+    'ALL'
+  end
+
+  def b(p, &cb)
+    'NOT GUARDED'
+  end
+  # rubocop:enable Style/EmptyLineBetweenDefs
+  # rubocop:enable Lint/DuplicateMethods
+  # rubocop:enable Lint/UnusedMethodArgument
+  # rubocop:enable Metrics/ParameterLists
+end

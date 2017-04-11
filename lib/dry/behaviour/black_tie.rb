@@ -1,8 +1,6 @@
 module Dry
-  # rubocop:disable Style/AsciiIdentifiers
   # rubocop:disable Style/MultilineBlockChain
-  # rubocop:disable Style/EmptyCaseCondition
-  # rubocop:disable Metrics/PerceivedComplexity
+  # rubocop:disable Metrics/MethodLength
   # rubocop:disable Metrics/CyclomaticComplexity
   # rubocop:disable Metrics/AbcSize
   # rubocop:disable Style/MethodName
@@ -56,14 +54,7 @@ module Dry
 
     DELEGATE_METHOD = lambda do |klazz, (source, target)|
       klazz.class_eval do
-        define_method source do |this, *args, **params, &λ|
-          case
-          when !args.empty? && !params.empty? then this.send(target, *args, **params, &λ)
-          when !args.empty? then this.send(target, *args, &λ)
-          when !params.empty? then this.send(target, **params, &λ)
-          else this.send(target, &λ)
-          end
-        end
+        define_method(source, &Dry::DEFINE_METHOD.curry[target])
       end
     end
 
@@ -126,8 +117,6 @@ module Dry
   # rubocop:enable Style/MethodName
   # rubocop:enable Metrics/AbcSize
   # rubocop:enable Metrics/CyclomaticComplexity
-  # rubocop:enable Metrics/PerceivedComplexity
-  # rubocop:enable Style/EmptyCaseCondition
+  # rubocop:enable Metrics/MethodLength
   # rubocop:enable Style/MultilineBlockChain
-  # rubocop:enable Style/AsciiIdentifiers
 end
