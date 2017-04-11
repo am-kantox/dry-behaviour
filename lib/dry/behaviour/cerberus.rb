@@ -17,6 +17,7 @@ module Dry
     def method_added(name)
       m = instance_method(name)
       key = m.parameters.any? { |(k, v)| k == :key && v == :when } ? H.extract_when(m) : nil
+      key = instance_eval(key) if key.is_a?(String)
       (guarded_methods[name] ||= {})[key] = m
     end
 
