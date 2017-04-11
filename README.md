@@ -4,7 +4,9 @@
 
 **Tiny library inspired by Elixir [`protocol`](http://elixir-lang.org/getting-started/protocols.html) pattern.**
 
-## Declaration
+## Protocols
+
+### Declaration
 
 ```ruby
 require 'dry/behaviour'
@@ -45,7 +47,7 @@ module Protocols
 end
 ```
 
-## Usage
+### Usage
 
 ```ruby
 expect(Protocols::Adder.add(5, 3)).to eq(8)
@@ -56,6 +58,40 @@ expect(Protocols::Adder.add("!", 10)).to eq("!!!!!!!!!!")
 expect(Protocols::Adder.add(nil, 10)).to eq(10)
 
 expect(Protocols::Adder.add_default(1)).to eq(6)
+```
+
+## Guards
+
+Starting with `v0.5.0` we support multiple function clauses and guards.
+
+```ruby
+class GuardTest
+  include Dry::Guards
+
+  def a(p, p2 = nil, *_a, when: { p: Integer, p2: String }, **_b, &cb); 1; end
+  def a(p, _p2 = nil, *_a, when: { p: Integer }, **_b, &cb); 2; end
+  def a(p, _p2 = nil, *_a, when: { p: Float }, **_b, &cb); 3; end
+  def a(p, _p2 = nil, *_a, when: { p: ->(v) { v < 42 } }, **_b, &cb); 4; end
+  def a(_p, _p2 = nil, *_a, when: { cb: ->(v) { !v.nil? } }, **_b, &cb); 5; end
+  def a(p1, p2, p3); 6; end
+  def a(p, _p2 = nil, *_a, **_b, &cb); 'ALL'; end
+
+  def b(p, &cb)
+    'NOT GUARDED'
+  end
+end
+
+gt = GuardTest.new
+
+it 'performs routing to function clauses as by guards' do
+  expect(gt.a(42, 'Hello')).to eq(1)
+  expect(gt.a(42)).to eq(2)
+  expect(gt.a(3.14)).to eq(3)
+  expect(gt.a(3)).to eq(4)
+  # expect(gt.a('Hello', &-> { puts 0 })).to eq(5) NYI
+  expect(gt.a(*%w|1 2 3|)).to eq(6)
+  expect(gt.a('Hello')).to eq('ALL')
+end
 ```
 
 ## Authors
