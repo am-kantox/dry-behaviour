@@ -88,10 +88,11 @@ module Dry
               break [[hash, m], idx] if hash.nil? && (m.arity < 0 || m.arity == args.size)
               next if hash.nil?
               hash.all? do |param, condition|
-                # binding.pry
                 idx = m.parameters.index { |_type, var| var == param }
                 # rubocop:disable Style/CaseEquality
-                idx && condition === args[idx]
+                # rubocop:disable Style/RescueModifier
+                idx && condition === args[idx] rescue false # FIXME: more accurate
+                # rubocop:enable Style/RescueModifier
                 # rubocop:enable Style/CaseEquality
               end
             end
