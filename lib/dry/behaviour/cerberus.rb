@@ -9,19 +9,30 @@ module Dry
       end.enable
     end
 
+    @adding_alias = false
+
     def guarded_methods
       @guarded_methods ||= {}
     end
 
     # [[:req, :p], [:opt, :po], [:rest, :a], [:key, :when], [:keyrest, :b], [:block, :cb]]
     def method_added(name)
+      return if @adding_alias
+
       m = instance_method(name)
       key = m.parameters.any? { |(k, v)| k == :key && v == :when } ? H.extract_when(m) : nil
       key = instance_eval(key) if key.is_a?(String)
       (guarded_methods[name] ||= {})[key] = m
+
+      @adding_alias = true
+      alias_name = H.alias_name(m, guarded_methods[name].size.pred)
+      alias_method alias_name, name
+      # private alias_name
+      @adding_alias = false
     end
 
     module H
+      CONCAT = '_★_'.freeze
       module_function
 
       def extract_when(m)
@@ -30,34 +41,65 @@ module Dry
 
         # FIXME: more careful grep
         File.readlines(file)[line - 1..-1].join(' ')[/(?<=when:).*/].tap do |guard|
-          raise ::Dry::Guards::NotGuardable.new(m, :when) if guard.nil?
-
-          clause = guard.each_codepoint
-                        .drop_while { |cp| cp != 123 }
-                        .each_with_object(['', 0]) do |cp, acc|
-            case cp
-            when 123 then acc[-1] = acc.last.succ
-            when 125 then acc[-1] = acc.last.pred
-            end
-            acc.first << cp
-            break acc.first if acc.last.zero?
-          end
-
-          raise ::Dry::Guards::NotGuardable.new(m, :when) unless clause.is_a?(String)
-
+          raise ::Dry::Guards::NotGuardable.new(m, :when_is_nil) if guard.nil?
+          clause = parse_hash guard
+          raise ::Dry::Guards::NotGuardable.new(m, :when_not_hash) unless clause.is_a?(String)
           guard.replace clause
         end
       rescue Errno::ENOENT => e
         raise ::Dry::Guards::NotGuardable.new(m, e)
       end
 
-      def umbrellas(guarded)
-        guarded.guarded_methods.reject! { |_, hash| hash.size == 1 && hash.keys.first.nil? }
-        guarded.guarded_methods.each(&H.method(:umbrella))
+      def alias_name(m, idx)
+        :"#{m && m.name}#{CONCAT}#{idx}"
       end
 
-      def umbrella(name, clauses)
-        puts "★ #{name} ⇒ #{clauses}"
+      def parse_hash(input)
+        input.each_codepoint
+             .drop_while { |cp| cp != 123 }
+             .each_with_object(['', 0]) do |cp, acc|
+          case cp
+          when 123 then acc[-1] = acc.last.succ
+          when 125 then acc[-1] = acc.last.pred
+          end
+          acc.first << cp
+          break acc.first if acc.last.zero?
+        end
+      end
+
+      def umbrellas(guarded)
+        guarded.guarded_methods.reject! do |_, hash|
+          next unless hash.size == 1 && hash.keys.first.nil?
+          guarded.send :remove_method, alias_name(hash.values.first, 0)
+        end
+        # guarded.guarded_methods.each(&H.method(:umbrella).to_proc.curry[guarded])
+        guarded.guarded_methods.each do |name, clauses|
+          H.umbrella(guarded, name, clauses)
+        end
+      end
+
+      def umbrella(guarded, name, clauses)
+        puts "★ #{guarded} ⇒ #{name} ⇒ #{clauses} ⇒ #{clauses.first.last.arity}"
+        puts "★★★ Defining #{name.inspect} on #{guarded}"
+        guarded.prepend(Module.new do
+          define_method name do |*args, **params, &cb|
+            found = clauses.each_with_index.detect do |(hash, m), idx|
+              next if m.arity >= 0 && m.arity != args.size
+              break [[hash, m], idx] if hash.nil? && (m.arity < 0 || m.arity == args.size)
+              next if hash.nil?
+              hash.all? do |param, condition|
+                # binding.pry
+                idx = m.parameters.index { |_type, var| var == param }
+                # rubocop:disable Style/CaseEquality
+                idx && condition === args[idx]
+                # rubocop:enable Style/CaseEquality
+              end
+            end
+            raise NotMatched.new(*args, **params, &cb) unless found
+            send(H.alias_name(found.first.last, found.last), *args, **params, &cb)
+          end
+        end)
+        puts "★★★ #{guarded.instance_methods(false)}"
       end
     end
     private_constant :H
