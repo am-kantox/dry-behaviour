@@ -20,19 +20,24 @@ module Dry
       return if @adding_alias
 
       m = instance_method(name)
-      key = m.parameters.any? { |(k, v)| k == :key && v == :when } ? H.extract_when(m) : nil
-      key = instance_eval(key) if key.is_a?(String)
+      key = m.parameters.any? { |(k, v)| k == :key && v == :when } ? H.extract_when(m) : m.arity
+      key = case key
+            when String then instance_eval(key)
+            when -Float::INFINITY...0 then nil
+            else key
+            end
       (guarded_methods[name] ||= {})[key] = m
 
       @adding_alias = true
       alias_name = H.alias_name(m, guarded_methods[name].size.pred)
       alias_method alias_name, name
-      # private alias_name
+      private alias_name
       @adding_alias = false
     end
 
     module H
       CONCAT = '_★_'.freeze
+
       module_function
 
       def extract_when(m)
@@ -69,7 +74,7 @@ module Dry
 
       def umbrellas(guarded)
         guarded.guarded_methods.reject! do |_, hash|
-          next unless hash.size == 1 && hash.keys.first.nil?
+          next unless hash.size == 1 && hash.keys.first.is_a?(Integer)
           guarded.send :remove_method, alias_name(hash.values.first, 0)
         end
         # guarded.guarded_methods.each(&H.method(:umbrella).to_proc.curry[guarded])
@@ -79,13 +84,14 @@ module Dry
       end
 
       def umbrella(guarded, name, clauses)
-        puts "★ #{guarded} ⇒ #{name} ⇒ #{clauses} ⇒ #{clauses.first.last.arity}"
-        puts "★★★ Defining #{name.inspect} on #{guarded}"
         guarded.prepend(Module.new do
           define_method name do |*args, **params, &cb|
             found = clauses.each_with_index.detect do |(hash, m), idx|
               next if m.arity >= 0 && m.arity != args.size
-              break [[hash, m], idx] if hash.nil? && (m.arity < 0 || m.arity == args.size)
+              break [[hash, m], idx] if case hash
+                                        when NilClass then m.arity < 0
+                                        when Integer then hash == args.size
+                                        end
               next if hash.nil?
               hash.all? do |param, condition|
                 idx = m.parameters.index { |_type, var| var == param }
@@ -96,11 +102,10 @@ module Dry
                 # rubocop:enable Style/CaseEquality
               end
             end
-            raise NotMatched.new(*args, **params, &cb) unless found
-            send(H.alias_name(found.first.last, found.last), *args, **params, &cb)
+            raise ::Dry::Guards::NotMatched.new(*args, **params, &cb) unless found
+            ::Dry::DEFINE_METHOD.(H.alias_name(found.first.last, found.last), self, *args, **params, &cb)
           end
         end)
-        puts "★★★ #{guarded.instance_methods(false)}"
       end
     end
     private_constant :H

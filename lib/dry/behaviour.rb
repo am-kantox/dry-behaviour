@@ -4,6 +4,19 @@ require 'dry/behaviour/black_tie'
 require 'dry/behaviour/cerberus'
 
 module Dry
+  # rubocop:disable Style/AsciiIdentifiers
+  # rubocop:disable Style/EmptyCaseCondition
+  DEFINE_METHOD = lambda do |target, this, *args, **params, &λ|
+    case
+    when !args.empty? && !params.empty? then this.send(target, *args, **params, &λ)
+    when !args.empty? then this.send(target, *args, &λ)
+    when !params.empty? then this.send(target, **params, &λ)
+    else this.send(target, &λ)
+    end
+  end
+  # rubocop:enable Style/EmptyCaseCondition
+  # rubocop:enable Style/AsciiIdentifiers
+
   module Protocol
     def self.included(base)
       base.singleton_class.prepend(::Dry::BlackTie)

@@ -91,6 +91,9 @@ class GuardTest
   def a(_p, _p2 = nil, *_a, when: { cb: ->(v) { !v.nil? } }, **_b, &cb)
     5
   end
+  def a(p1, p2, p3)
+    6
+  end
   def a(p, _p2 = nil, *_a, **_b, &cb)
     'ALL'
   end
