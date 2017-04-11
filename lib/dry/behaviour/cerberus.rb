@@ -44,7 +44,6 @@ module Dry
         file, line = m.source_location
         raise ::Dry::Guards::NotGuardable.new(m, :nil) if file.nil?
 
-        # FIXME: more careful grep
         File.readlines(file)[line - 1..-1].join(' ')[/(?<=when:).*/].tap do |guard|
           raise ::Dry::Guards::NotGuardable.new(m, :when_is_nil) if guard.nil?
           clause = parse_hash guard
