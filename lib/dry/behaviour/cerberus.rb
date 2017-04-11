@@ -29,8 +29,23 @@ module Dry
         raise ::Dry::Guards::NotGuardable.new(m, :nil) if file.nil?
 
         # FIXME: more careful grep
-        File.readlines(file)[line - 1..-1].join(' ')[/(?<=when:).*?}/].tap do |guard|
+        File.readlines(file)[line - 1..-1].join(' ')[/(?<=when:).*/].tap do |guard|
           raise ::Dry::Guards::NotGuardable.new(m, :when) if guard.nil?
+
+          clause = guard.each_codepoint
+                        .drop_while { |cp| cp != 123 }
+                        .each_with_object(['', 0]) do |cp, acc|
+            case cp
+            when 123 then acc[-1] = acc.last.succ
+            when 125 then acc[-1] = acc.last.pred
+            end
+            acc.first << cp
+            break acc.first if acc.last.zero?
+          end
+
+          raise ::Dry::Guards::NotGuardable.new(m, :when) unless clause.is_a?(String)
+
+          guard.replace clause
         end
       rescue Errno::ENOENT => e
         raise ::Dry::Guards::NotGuardable.new(m, e)
