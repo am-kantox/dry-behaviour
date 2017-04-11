@@ -91,5 +91,9 @@ class GuardTest
   def a(p, _p2 = nil, *_a, **_b, &cb)
     'ALL'
   end
+
+  def b(p, &cb)
+    'NOT GUARDED'
+  end
   # rubocop:enable Metrics/ParameterLists
 end

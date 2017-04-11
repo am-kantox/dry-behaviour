@@ -36,6 +36,7 @@ module Dry
       end
 
       def umbrellas(guarded)
+        guarded.guarded_methods.reject! { |_, hash| hash.size == 1 && hash.keys.first.nil? }
         guarded.guarded_methods.each(&H.method(:umbrella))
       end
 
