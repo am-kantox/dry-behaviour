@@ -93,10 +93,13 @@ module Dry
                                         end
               next if hash.nil?
               hash.all? do |param, condition|
-                idx = m.parameters.index { |_type, var| var == param }
+                type_var, idx = m.parameters.each_with_index.detect { |(_type, var), idx| var == param }
                 # rubocop:disable Style/CaseEquality
                 # rubocop:disable Style/RescueModifier
-                idx && condition === args[idx] rescue false # FIXME: more accurate
+                idx && (case type_var.first
+              when :req, :opt then condition === args[idx] rescue false
+                        when :block then condition === cb
+                        end)
                 # rubocop:enable Style/RescueModifier
                 # rubocop:enable Style/CaseEquality
               end
