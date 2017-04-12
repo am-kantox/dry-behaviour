@@ -101,6 +101,22 @@ class GuardTest
   def b(p, &cb)
     'NOT GUARDED'
   end
+
+  def c(p)
+    1
+  end
+  def c(p, p2)
+    2
+  end
+
+  def d(p, when: {p: Integer})
+    1
+  end
+  def d(p, when: {p: Float})
+    2
+  end
+
+
   # rubocop:enable Style/EmptyLineBetweenDefs
   # rubocop:enable Lint/DuplicateMethods
   # rubocop:enable Lint/UnusedMethodArgument

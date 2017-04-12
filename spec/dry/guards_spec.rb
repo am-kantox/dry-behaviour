@@ -4,8 +4,8 @@ describe Dry::Guards do
   let(:gt) { GuardTest.new }
 
   it 'permits function overriding' do
-    expect(GuardTest.guarded_methods.size).to eq(1)
-    expect(GuardTest.guarded_methods.keys).to match_array(%i(a))
+    expect(GuardTest.guarded_methods.size).to eq(3)
+    expect(GuardTest.guarded_methods.keys).to match_array(%i(a c d))
     expect(GuardTest.guarded_methods.first.last.size).to eq(7)
   end
 
@@ -21,5 +21,10 @@ describe Dry::Guards do
     # expect(gt.a('Hello', &-> { puts 0 })).to eq(5) NYI
     expect(gt.a(*%w|1 2 3|)).to eq(6)
     expect(gt.a('Hello')).to eq('ALL')
+  end
+
+  it 'properly handles no-match cases' do
+    expect { gt.c(42, 3.14, 'Hello') }.to raise_error(::Dry::Guards::NotMatched)
+    expect { gt.d('Hello') }.to raise_error(::Dry::Guards::NotMatched)
   end
 end
