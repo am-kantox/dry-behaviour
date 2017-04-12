@@ -97,7 +97,7 @@ module Dry
                 # rubocop:disable Style/CaseEquality
                 # rubocop:disable Style/RescueModifier
                 idx && (case type_var.first
-              when :req, :opt then condition === args[idx] rescue false
+                        when :req, :opt then condition === args[idx] rescue false
                         when :block then condition === cb
                         end)
                 # rubocop:enable Style/RescueModifier
