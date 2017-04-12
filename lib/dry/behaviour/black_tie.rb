@@ -46,6 +46,10 @@ module Dry
           end
         end
       end
+
+      singleton_class.send :define_method, :respond_to? do |method|
+        BlackTie.protocols[self].keys.include? method
+      end
     end
 
     def defmethod(name, *params)

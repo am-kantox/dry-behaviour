@@ -62,4 +62,9 @@ describe Dry::Behaviour do
       /Protocol “Protocols::Adder” does not declare method “undefined method `crossreferenced' for "42":/
     )
   end
+
+  it 'answers to `respond_to?' do
+    expect(Protocols::Adder.respond_to?(:foo)).to be_truthy
+    expect(Protocols::Adder.respond_to?(:baz)).to be_falsey
+  end
 end
