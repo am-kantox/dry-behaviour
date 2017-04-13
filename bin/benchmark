@@ -1,0 +1,4 @@
+#!/usr/bin/env ruby
+
+require 'dry/behaviour'
+require_relative '../spec/benchmark/guarded'
