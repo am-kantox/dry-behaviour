@@ -82,6 +82,10 @@ module Dry
         end
       end
 
+      # rubocop:disable Metrics/MethodLength
+      # rubocop:disable Metrics/CyclomaticComplexity
+      # rubocop:disable Metrics/PerceivedComplexity
+      # rubocop:disable Style/AsciiComments
       def umbrella(guarded, name, clauses)
         guarded.prepend(Module.new do
           define_method name do |*args, **params, &cb|
@@ -93,9 +97,8 @@ module Dry
                                         end
               next if hash.nil?
               hash.all? do |param, condition|
-                type_var, idx = m.parameters.each_with_index.detect { |(_type, var), idx| var == param }
+                type_var, idx = m.parameters.each_with_index.detect { |(_type, var), _i| var == param }
                 # rubocop:disable Style/CaseEquality
-                # rubocop:disable Style/RescueModifier
                 idx && begin
                          case type_var.first
                          when :req, :opt then condition === args[idx]
@@ -104,7 +107,6 @@ module Dry
                        rescue => _e
                          false # we don’t care
                        end
-                # rubocop:enable Style/RescueModifier
                 # rubocop:enable Style/CaseEquality
               end
             end
@@ -113,6 +115,10 @@ module Dry
           end
         end)
       end
+      # rubocop:enable Style/AsciiComments
+      # rubocop:enable Metrics/PerceivedComplexity
+      # rubocop:enable Metrics/CyclomaticComplexity
+      # rubocop:enable Metrics/MethodLength
     end
     private_constant :H
   end

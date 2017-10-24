@@ -19,7 +19,11 @@ describe Dry::Guards do
     expect(gt.a(3.14)).to eq(3)
     expect(gt.a(3)).to eq(4)
     expect(gt.a('Hello', &-> { puts 0 })).to eq(5)
+    # rubocop:disable Lint/UnneededSplatExpansion
+    # rubocop:disable Style/PercentLiteralDelimiters
     expect(gt.a(*%w|1 2 3|)).to eq(6)
+    # rubocop:enable Style/PercentLiteralDelimiters
+    # rubocop:enable Lint/UnneededSplatExpansion
     expect(gt.a('Hello')).to eq('ALL')
   end
 

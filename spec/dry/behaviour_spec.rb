@@ -1,5 +1,6 @@
 require 'spec_helper'
 
+# rubocop:disable Metrics/BlockLength
 describe Dry::Behaviour do
   it 'has a version number' do
     expect(Dry::Behaviour::VERSION).not_to be nil
@@ -68,3 +69,4 @@ describe Dry::Behaviour do
     expect(Protocols::Adder.respond_to?(:baz)).to be_falsey
   end
 end
+# rubocop:enable Metrics/BlockLength
