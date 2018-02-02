@@ -29,6 +29,7 @@ describe Dry::Behaviour do
 
   it 'allows to call protocol-wide methods from inside implementation' do
     expect(Protocols::Adder.crossreferenced(nil)).to eq(47)
+    expect(Protocols::Adder.crossreferenced(RespondingToA.new)).to eq(47)
     expect(Protocols::Adder.crossreferenced(3.14).round(2)).to eq(11.28)
   end
 

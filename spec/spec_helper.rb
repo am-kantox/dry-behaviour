@@ -2,6 +2,12 @@ $LOAD_PATH.unshift File.expand_path('../../lib', __FILE__)
 require 'pry'
 require 'dry/behaviour'
 
+class RespondingToA
+  def self.to_a
+    [42]
+  end
+end
+
 module Protocols
   module Adder
     include Dry::Protocol
@@ -39,6 +45,28 @@ module Protocols
 
       def foo(this)
         super(this)
+      end
+    end
+
+    defimpl target: RespondingToA, delegate: :to_s do
+      def add(_this, other)
+        other
+      end
+
+      def subtract(this, _other)
+        this
+      end
+
+      def foo(_this)
+        '42'
+      end
+
+      def add_default(value)
+        add(13, 42) + value
+      end
+
+      def crossreferenced(this)
+        add(this, add_default(5))
       end
     end
   end

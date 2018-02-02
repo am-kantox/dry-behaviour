@@ -100,6 +100,10 @@ end
 
 ## Changelog
 
+### `0.6.0` :: Bugfix
+
+- Implementation for classes responding to **`to_a`** is handled properly
+
 ### `0.5.0` :: Guards
 
 ### `0.4.2` :: Removed the forgotten debug output :(

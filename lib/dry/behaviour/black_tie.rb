@@ -89,7 +89,8 @@ module Dry
             acc << m
           end
         end.each do |m|
-          [*target].each do |tgt|
+          target = [target] unless target.is_a?(Array)
+          target.each do |tgt|
             BlackTie.implementations[protocol][tgt][m] = mod.method(m).to_proc
           end
         end
