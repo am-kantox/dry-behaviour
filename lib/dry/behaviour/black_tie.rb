@@ -24,7 +24,9 @@ module Dry
       (instance_methods(false) - ims).each { |m| class_eval { module_function m } }
 
       singleton_class.send :define_method, :method_missing do |method, *_args|
-        raise Dry::Protocol::NotImplemented.new(:method, inspect, method)
+        raise Dry::Protocol::NotImplemented.new(
+          :method, inspect, method: method, self: self
+        )
       end
 
       singleton_class.send :define_method, :implementation_for do |receiver|
@@ -33,16 +35,21 @@ module Dry
         end.reject(&:nil?).first
       end
 
-      BlackTie.protocols[self].each do |method, *_| # FIXME: CHECK PARAMS CORRESPONDENCE HERE
+      BlackTie.protocols[self].each do |method, *_| # FIXME: CHECK ARITY HERE
         singleton_class.send :define_method, method do |receiver = nil, *args|
           impl = implementation_for(receiver)
-          raise Dry::Protocol::NotImplemented.new(:protocol, inspect, receiver.class) unless impl
+          raise Dry::Protocol::NotImplemented.new(
+            :protocol, inspect,
+            method: method, receiver: receiver, args: args, self: self
+          ) unless impl
           begin
             impl[method].(*args.unshift(receiver))
-          rescue NoMethodError => e
-            raise Dry::Protocol::NotImplemented.new(:method, inspect, e.message)
-          rescue ArgumentError => e
-            raise Dry::Protocol::NotImplemented.new(:method, inspect, "#{method} (#{e.message})")
+          rescue => e
+            raise Dry::Protocol::NotImplemented.new(
+                :nested, inspect,
+                cause: e,
+                method: method, receiver: receiver, args: args, impl: impl, self: self
+              )
           end
         end
       end

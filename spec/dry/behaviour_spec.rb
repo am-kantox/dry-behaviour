@@ -56,13 +56,20 @@ describe Dry::Behaviour do
       '“Integer” is not a protocol.'
     )
     expect { Protocols::Adder.crossreferenced(nil, true) } .to raise_error(
-      Dry::Protocol::NotImplemented,
-      /Protocol “Protocols::Adder” does not declare method “crossreferenced \(wrong number of arguments/
+      Dry::Protocol::NotImplemented, / ⮩    “wrong number of arguments/
     )
     expect { Protocols::Adder.crossreferenced('42', '3.14') } .to raise_error(
-      Dry::Protocol::NotImplemented,
-      /Protocol “Protocols::Adder” does not declare method “undefined method `crossreferenced' for "42":/
+      Dry::Protocol::NotImplemented, / ⮩    “undefined method `crossreferenced' for "42":/
     )
+
+    ex =
+      begin
+        Protocols::Adder.crossreferenced(nil, true)
+      rescue => e
+        e
+      end
+    expect(ex.backtrace.first).to \
+      be_end_with("dry-behaviour/spec/spec_helper.rb:96:in `crossreferenced'")
   end
 
   it 'answers to `respond_to?' do
