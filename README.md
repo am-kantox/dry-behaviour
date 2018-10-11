@@ -100,9 +100,41 @@ end
 
 ## Changelog
 
+### `0.8.0` :: Implicit Inheritance
+
+- deprecate implicit delegation to the target instance; error message saying “it’ll be removed in 1.0”
+- `implicit_inheritance: true` flag in call to `defprotocol` makes the implementation implicitly inherit the behaviour declared in the core protocol module itself, without the necessity to explicitly call `super`:
+
+```diff
+ module ParentOKImplicit
+   include Dry::Protocol
+
+-  defprotocol do
++  defprotocol implicit_inheritance: true do
+     defmethod :foo
+
+     def foo(this)
+       :ok
+     end
+
+     defimpl target: String do
+-      def foo(this)
+-        super(this)
+-      end
+     end
+   end
+ end
+```
+
+### `0.7.0` :: Handling Errors
+
+- better error messages (very descriptive, with whys and howtos)
+- the whole stacktrace is carefully saved with `cause`
+- internal exceptions related to wrong implementation do now point to the proper lines in the client code (internal trace lines are removed)
+
 ### `0.6.0` :: Bugfix
 
-- Implementation for classes responding to **`to_a`** is handled properly
+- implementation for classes responding to **`to_a`** is handled properly
 
 ### `0.5.0` :: Guards
 

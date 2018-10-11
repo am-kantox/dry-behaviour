@@ -13,10 +13,11 @@ module Dry
           when :method
             "Protocol “#{@proto}” does not declare method “#{@details[:method]}”."
           when :nested
-            "Protocol “#{@proto}” failed to invoke the implementation.\n" \
-            " ⮩  caused by “#{cause.class}” with a message\n" \
+            "Protocol “#{@proto}” failed to invoke the implementation for\n" \
+            " ⮩    “#{@details[:receiver].class}##{@details[:method]}”.\n" \
+            " ⮩  Caused by “#{cause.class}” with a message\n" \
             " ⮩    “#{cause.message}”\n" \
-            " ⮩  rescue this exception and inspect `NotImplemented#cause' for details."
+            " ⮩  Rescue this exception and inspect `NotImplemented#cause' for details."
           else
             "Protocol “#{proto}” is invalid."
           end
