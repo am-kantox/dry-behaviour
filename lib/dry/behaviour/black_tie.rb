@@ -15,12 +15,14 @@ module Dry
       end
     end
 
-    def defprotocol
-      raise if BlackTie.protocols.key?(self) # DUPLICATE DEF
-      raise unless block_given?
+    def defprotocol(implicit_inheritance: false, &λ)
+      raise ::Dry::Protocol::DuplicateDefinition.new(self) if BlackTie.protocols.key?(self)
+      raise ::Dry::Protocol::MalformedDefinition.new(self) unless block_given?
+
+      BlackTie.protocols[self][:__implicit_inheritance__] = !!implicit_inheritance
 
       ims = instance_methods(false)
-      class_eval(&Proc.new)
+      class_eval(&λ)
       (instance_methods(false) - ims).each { |m| class_eval { module_function m } }
 
       singleton_class.send :define_method, :method_missing do |method, *_args|
@@ -55,7 +57,7 @@ module Dry
       end
 
       singleton_class.send :define_method, :respond_to? do |method|
-        BlackTie.protocols[self].keys.include? method
+        NORMALIZE_KEYS.(self).include? method
       end
     end
 
@@ -78,21 +80,42 @@ module Dry
       end.enable
     end
 
-    def defimpl(protocol = nil, target: nil, delegate: [], map: {})
+    NORMALIZE_KEYS = lambda do |protocol|
+      BlackTie.protocols[protocol].keys.reject { |k| k.to_s =~ /\A__.*__\z/ }
+    end
+
+    IMPLICIT_DELEGATE_DEPRECATION =
+      "\n⚠️  DEPRECATED →  Implicit delegation to the target class will be removed in 1.0\n" \
+      "  ⮩   due to the lack of the explicit implementation of %s#%s for %s\n" \
+      "  ⮩   it will be delegated to the target class itself.\n" \
+      "  ⮩  Consider using explicit `delegate:' declaration in `defimpl' or\n" \
+      "  ⮩   use `implicit_inheritance: true' parameter in protocol definition.".freeze
+
+    def defimpl(protocol = nil, target: nil, delegate: [], map: {}, &λ)
       raise if target.nil? || !block_given? && delegate.empty? && map.empty?
 
       mds = normalize_map_delegates(delegate, map)
 
       Module.new do
         mds.each(&DELEGATE_METHOD.curry[singleton_class])
-        singleton_class.class_eval(&Proc.new) if block_given? # block takes precedence
+        singleton_class.class_eval(&λ) if block_given? # block takes precedence
       end.tap do |mod|
         protocol ? mod.extend(protocol) : POSTPONE_EXTEND.(mod, protocol = self)
 
         mod.methods(false).tap do |meths|
-          (BlackTie.protocols[protocol].keys - meths).each_with_object(meths) do |m, acc|
-            BlackTie.Logger.warn("Implicit delegate #{protocol.inspect}##{m} to #{target}")
-            DELEGATE_METHOD.(mod.singleton_class, [m] * 2)
+          (NORMALIZE_KEYS.(protocol) - meths).each_with_object(meths) do |m, acc|
+            if BlackTie.protocols[protocol][:__implicit_inheritance__]
+              mod.singleton_class.class_eval do
+                define_method m do |*args, &λ|
+                  super(*args, &λ)
+                end
+              end
+            else
+              BlackTie.Logger.warn(
+                IMPLICIT_DELEGATE_DEPRECATION % [protocol.inspect, m, target]
+              )
+              DELEGATE_METHOD.(mod.singleton_class, [m] * 2)
+            end
             acc << m
           end
         end.each do |m|

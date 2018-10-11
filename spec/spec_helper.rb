@@ -72,6 +72,56 @@ module Protocols
   end
 end
 
+module Protocols
+  module ParentOK
+    include Dry::Protocol
+
+    defprotocol do
+      defmethod :foo
+
+      def foo(this)
+        :ok
+      end
+
+      defimpl target: String do
+        def foo(this)
+          super(this)
+        end
+      end
+    end
+  end
+
+  module ParentKO
+    include Dry::Protocol
+
+    defprotocol do
+      defmethod :foo
+
+      def foo(this)
+        :ok
+      end
+
+      defimpl target: String do
+      end
+    end
+  end
+
+  module ParentOKImplicit
+    include Dry::Protocol
+
+    defprotocol implicit_inheritance: true do
+      defmethod :foo
+
+      def foo(this)
+        :ok
+      end
+
+      defimpl target: String do
+      end
+    end
+  end
+end
+
 Dry::Protocol.defimpl Protocols::Adder, target: NilClass do
   def add(_this, other)
     other
@@ -93,10 +143,13 @@ Dry::Protocol.defimpl Protocols::Adder, target: NilClass do
     add(13, 42) + value
   end
 
+  ::BACKTRACE_LINE = __LINE__ + 1
   def crossreferenced(this)
     add(this, add_default(5))
   end
 end
+
+################################################################################
 
 class GuardTest
   include Dry::Guards

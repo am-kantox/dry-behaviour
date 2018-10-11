@@ -59,7 +59,7 @@ describe Dry::Behaviour do
       Dry::Protocol::NotImplemented, / ⮩    “wrong number of arguments/
     )
     expect { Protocols::Adder.crossreferenced('42', '3.14') } .to raise_error(
-      Dry::Protocol::NotImplemented, / ⮩    “undefined method `crossreferenced' for "42":/
+      Dry::Protocol::NotImplemented, / ⮩    “undefined method `crossreferenced' for "42"/
     )
 
     ex =
@@ -69,12 +69,20 @@ describe Dry::Behaviour do
         e
       end
     expect(ex.backtrace.first).to \
-      be_end_with("dry-behaviour/spec/spec_helper.rb:96:in `crossreferenced'")
+      be_end_with("dry-behaviour/spec/spec_helper.rb:#{BACKTRACE_LINE}:in `crossreferenced'")
   end
 
-  it 'answers to `respond_to?' do
+  it 'answers to `respond_to?`' do
     expect(Protocols::Adder.respond_to?(:foo)).to be_truthy
     expect(Protocols::Adder.respond_to?(:baz)).to be_falsey
+  end
+
+  it 'allows implicit protocol inheritance' do
+    expect(Protocols::ParentOK.respond_to?(:foo)).to be_truthy
+    expect { Protocols::ParentOK.foo('42') } .not_to raise_error
+    expect { Protocols::ParentKO.foo('42') } .to raise_error(/undefined method `foo' for "42"/)
+    expect { Protocols::ParentOKImplicit.foo('42') } .not_to raise_error
+    expect(Protocols::ParentOKImplicit.foo('42')).to eq(:ok)
   end
 end
 # rubocop:enable Metrics/BlockLength
