@@ -63,13 +63,13 @@ module Dry
 
     def defmethod(name, *params)
       if params.size.zero? || params.first.is_a?(Array) && params.first.last != :req
-        BlackTie.Logger.warn(IMPLICIT_RECEIVER_DECLARATION % [self.inspect, name])
+        BlackTie.Logger.warn(IMPLICIT_RECEIVER_DECLARATION % [Dry::BlackTie.proto_caller, self.inspect, name])
         params.unshift(:this)
       end
       params =
         params.map do |p, type|
           if type && !PARAM_TYPES.include?(type)
-            BlackTie.Logger.warn(UNKNOWN_TYPE_DECLARATION % [type, self.inspect, name])
+            BlackTie.Logger.warn(UNKNOWN_TYPE_DECLARATION % [Dry::BlackTie.proto_caller, type, self.inspect, name])
             type = nil
           end
           [type || PARAM_TYPES.include?(p) ? p : :req, p]
@@ -98,7 +98,7 @@ module Dry
               end
             else
               BlackTie.Logger.warn(
-                IMPLICIT_DELEGATE_DEPRECATION % [protocol.inspect, m, target]
+                IMPLICIT_DELEGATE_DEPRECATION % [Dry::BlackTie.proto_caller, protocol.inspect, m, target]
               )
               DELEGATE_METHOD.(mod.singleton_class, [m] * 2)
             end
@@ -113,8 +113,9 @@ module Dry
                 mod.method(m).parameters.reject { |_, v| v.to_s[/\A♿_/] }
               ].map(&:first).reduce(:==)
 
+            # TODO[1.0] raise NotImplemented(:arity)
             BlackTie.Logger.warn(
-              WRONG_PARAMETER_DECLARATION % [protocol.inspect, m, target, BlackTie.protocols[protocol][m].map(&:first)]
+              WRONG_PARAMETER_DECLARATION % [Dry::BlackTie.proto_caller, protocol.inspect, m, target, BlackTie.protocols[protocol][m].map(&:first)]
             ) unless ok
 
             BlackTie.implementations[protocol][tgt][m] = mod.method(m).to_proc
@@ -145,25 +146,35 @@ module Dry
       BlackTie.protocols[protocol].keys.reject { |k| k.to_s =~ /\A__.*__\z/ }
     end
 
+    def self.proto_caller
+      caller.drop_while do |line|
+        line =~ %r[dry-behaviour/lib/dry/behaviour]
+      end.first
+    end
+
     IMPLICIT_DELEGATE_DEPRECATION =
-      "\n🚨️  DEPRECATED →  Implicit delegation to the target class will be removed in 1.0\n" \
+      "\n🚨️  DEPRECATED →  %s\n" \
+      "  ⮩  Implicit delegation to the target class will be removed in 1.0\n" \
       "  ⮩   due to the lack of the explicit implementation of %s#%s for %s\n" \
       "  ⮩   it will be delegated to the target class itself.\n" \
       "  ⮩  Consider using explicit `delegate:' declaration in `defimpl' or\n" \
       "  ⮩   use `implicit_inheritance: true' parameter in protocol definition.".freeze
 
     IMPLICIT_RECEIVER_DECLARATION =
-      "\n⚠️  TOO IMPLICIT →  Implicit declaration of `this' parameter in `defmethod'.\n" \
+      "\n⚠️  TOO IMPLICIT →  %s\n" \
+      "  ⮩  Implicit declaration of `this' parameter in `defmethod'.\n" \
       "  ⮩   Whilst it’s allowed, we strongly encourage to explicitly declare it\n" \
       "  ⮩   in call to %s#defmethod(%s).".freeze
 
     UNKNOWN_TYPE_DECLARATION =
-      "\n⚠️  UNKNOWN TYPE →  Unknown parameter type [%s] in call to %s#defmethod(%s).\n" \
+      "\n⚠️  UNKNOWN TYPE →  %s\n" \
+      "  ⮩  Unknown parameter type [%s] in call to %s#defmethod(%s).\n" \
       "  ⮩   Is it a typo? Omit the type for `:req' or pass one of allowed types:\n" \
       "  ⮩   #{PARAM_TYPES.inspect}".freeze
 
     WRONG_PARAMETER_DECLARATION =
-      "\n🚨️  DEPRECATED →  Wrong parameters declaration will be removed in 1.0\n" \
+      "\n🚨️  DEPRECATED →  %s\n" \
+      "  ⮩  Wrong parameters declaration will be removed in 1.0\n" \
       "  ⮩   %s#%s was implemented for %s with unexpected parameters.\n" \
       "  ⮩  Consider implementing interfaces exactly as they were declared.\n" \
       "  ⮩   Expected: %s".freeze
