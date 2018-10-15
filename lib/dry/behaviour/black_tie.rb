@@ -62,8 +62,70 @@ module Dry
     end
 
     def defmethod(name, *params)
+      if params.size.zero? || params.first.is_a?(Array) && params.first.last != :req
+        BlackTie.Logger.warn(IMPLICIT_RECEIVER_DECLARATION % [Dry::BlackTie.proto_caller, self.inspect, name])
+        params.unshift(:this)
+      end
+      params =
+        params.map do |p, type|
+          if type && !PARAM_TYPES.include?(type)
+            BlackTie.Logger.warn(UNKNOWN_TYPE_DECLARATION % [Dry::BlackTie.proto_caller, type, self.inspect, name])
+            type = nil
+          end
+          [type || PARAM_TYPES.include?(p) ? p : :req, p]
+        end
       BlackTie.protocols[self][name] = params
     end
+
+    def defimpl(protocol = nil, target: nil, delegate: [], map: {}, &λ)
+      raise if target.nil? || !block_given? && delegate.empty? && map.empty?
+
+      mds = normalize_map_delegates(delegate, map)
+
+      Module.new do
+        mds.each(&DELEGATE_METHOD.curry[singleton_class])
+        singleton_class.class_eval(&λ) if block_given? # block takes precedence
+      end.tap do |mod|
+        protocol ? mod.extend(protocol) : POSTPONE_EXTEND.(mod, protocol = self)
+
+        mod.methods(false).tap do |meths|
+          (NORMALIZE_KEYS.(protocol) - meths).each_with_object(meths) do |m, acc|
+            if BlackTie.protocols[protocol][:__implicit_inheritance__]
+              mod.singleton_class.class_eval do
+                define_method m do |this, *♿_args, &♿_λ|
+                  super(this, *♿_args, &♿_λ)
+                end
+              end
+            else
+              BlackTie.Logger.warn(
+                IMPLICIT_DELEGATE_DEPRECATION % [Dry::BlackTie.proto_caller, protocol.inspect, m, target]
+              )
+              DELEGATE_METHOD.(mod.singleton_class, [m] * 2)
+            end
+            acc << m
+          end
+        end.each do |m|
+          target = [target] unless target.is_a?(Array)
+          target.each do |tgt|
+            ok =
+              [
+                BlackTie.protocols[protocol][m],
+                mod.method(m).parameters.reject { |_, v| v.to_s[/\A♿_/] }
+              ].map(&:first).reduce(:==)
+
+            # TODO[1.0] raise NotImplemented(:arity)
+            BlackTie.Logger.warn(
+              WRONG_PARAMETER_DECLARATION % [Dry::BlackTie.proto_caller, protocol.inspect, m, target, BlackTie.protocols[protocol][m].map(&:first)]
+            ) unless ok
+
+            BlackTie.implementations[protocol][tgt][m] = mod.method(m).to_proc
+          end
+        end
+      end
+    end
+    module_function :defimpl
+
+    PARAM_TYPES = %i[req opt rest keyrest block]
 
     DELEGATE_METHOD = lambda do |klazz, (source, target)|
       klazz.class_eval do
@@ -84,49 +146,38 @@ module Dry
       BlackTie.protocols[protocol].keys.reject { |k| k.to_s =~ /\A__.*__\z/ }
     end
 
+    def self.proto_caller
+      caller.drop_while do |line|
+        line =~ %r[dry-behaviour/lib/dry/behaviour]
+      end.first
+    end
+
     IMPLICIT_DELEGATE_DEPRECATION =
-      "\n⚠️  DEPRECATED →  Implicit delegation to the target class will be removed in 1.0\n" \
+      "\n🚨️  DEPRECATED →  %s\n" \
+      "  ⮩  Implicit delegation to the target class will be removed in 1.0\n" \
       "  ⮩   due to the lack of the explicit implementation of %s#%s for %s\n" \
       "  ⮩   it will be delegated to the target class itself.\n" \
       "  ⮩  Consider using explicit `delegate:' declaration in `defimpl' or\n" \
       "  ⮩   use `implicit_inheritance: true' parameter in protocol definition.".freeze
 
-    def defimpl(protocol = nil, target: nil, delegate: [], map: {}, &λ)
-      raise if target.nil? || !block_given? && delegate.empty? && map.empty?
+    IMPLICIT_RECEIVER_DECLARATION =
+      "\n⚠️  TOO IMPLICIT →  %s\n" \
+      "  ⮩  Implicit declaration of `this' parameter in `defmethod'.\n" \
+      "  ⮩   Whilst it’s allowed, we strongly encourage to explicitly declare it\n" \
+      "  ⮩   in call to %s#defmethod(%s).".freeze
 
-      mds = normalize_map_delegates(delegate, map)
+    UNKNOWN_TYPE_DECLARATION =
+      "\n⚠️  UNKNOWN TYPE →  %s\n" \
+      "  ⮩  Unknown parameter type [%s] in call to %s#defmethod(%s).\n" \
+      "  ⮩   Is it a typo? Omit the type for `:req' or pass one of allowed types:\n" \
+      "  ⮩   #{PARAM_TYPES.inspect}".freeze
 
-      Module.new do
-        mds.each(&DELEGATE_METHOD.curry[singleton_class])
-        singleton_class.class_eval(&λ) if block_given? # block takes precedence
-      end.tap do |mod|
-        protocol ? mod.extend(protocol) : POSTPONE_EXTEND.(mod, protocol = self)
-
-        mod.methods(false).tap do |meths|
-          (NORMALIZE_KEYS.(protocol) - meths).each_with_object(meths) do |m, acc|
-            if BlackTie.protocols[protocol][:__implicit_inheritance__]
-              mod.singleton_class.class_eval do
-                define_method m do |*args, &λ|
-                  super(*args, &λ)
-                end
-              end
-            else
-              BlackTie.Logger.warn(
-                IMPLICIT_DELEGATE_DEPRECATION % [protocol.inspect, m, target]
-              )
-              DELEGATE_METHOD.(mod.singleton_class, [m] * 2)
-            end
-            acc << m
-          end
-        end.each do |m|
-          target = [target] unless target.is_a?(Array)
-          target.each do |tgt|
-            BlackTie.implementations[protocol][tgt][m] = mod.method(m).to_proc
-          end
-        end
-      end
-    end
-    module_function :defimpl
+    WRONG_PARAMETER_DECLARATION =
+      "\n🚨️  DEPRECATED →  %s\n" \
+      "  ⮩  Wrong parameters declaration will be removed in 1.0\n" \
+      "  ⮩   %s#%s was implemented for %s with unexpected parameters.\n" \
+      "  ⮩  Consider implementing interfaces exactly as they were declared.\n" \
+      "  ⮩   Expected: %s".freeze
 
     def self.Logger
       @logger ||= if Kernel.const_defined?('::Rails')

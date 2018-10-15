@@ -18,6 +18,14 @@ module Dry
             " ⮩  Caused by “#{cause.class}” with a message\n" \
             " ⮩    “#{cause.message}”\n" \
             " ⮩  Rescue this exception and inspect `NotImplemented#cause' for details."
+          when :arity
+            "Attempt to implement “#{@proto}#@details[:method]}”\n" \
+            " ⮩    with a wrong arity for “#{@details[:target]}”.\n" \
+            " ⮩  Expected parameters types:\n" \
+            " ⮩    “#{@details[:expected]}”\n" \
+            " ⮩  Provided parameters types:\n" \
+            " ⮩    “#{@details[:provided]}”\n" \
+            " ⮩  Please consider providing a proper implementation."
           else
             "Protocol “#{proto}” is invalid."
           end

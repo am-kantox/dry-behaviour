@@ -100,6 +100,11 @@ end
 
 ## Changelog
 
+### `0.9.0` :: Warning On Wrong Arity
+
+- many error reporting improvements,
+- warning on wrong arity (declaration, arity 0 / implementation, wrong arity)
+
 ### `0.8.0` :: Implicit Inheritance
 
 - deprecate implicit delegation to the target instance; error message saying “it’ll be removed in 1.0”

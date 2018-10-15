@@ -84,5 +84,11 @@ describe Dry::Behaviour do
     expect { Protocols::ParentOKImplicit.foo('42') } .not_to raise_error
     expect(Protocols::ParentOKImplicit.foo('42')).to eq(:ok)
   end
+
+  it 'checks arity of the impleemntation' do
+    expect(Protocols::Arity.foo0('42')).to eq(:ok)
+    expect(Protocols::Arity.foo1('42')).to eq(:ok)
+    expect(Protocols::Arity.foo2('42')).to eq(:ok)
+  end
 end
 # rubocop:enable Metrics/BlockLength
