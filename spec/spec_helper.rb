@@ -122,6 +122,31 @@ module Protocols
   end
 end
 
+module Protocols
+  module Arity
+    include Dry::Protocol
+
+    defprotocol implicit_inheritance: true do
+      defmethod :foo0
+      defmethod :foo1, :this
+      defmethod :foo2, :this, :req, :opt, :req, :rest, :keyrest, :block
+
+      def foo0(this)
+        :ok
+      end
+      def foo1(this)
+        :ok
+      end
+      def foo2(this)
+        :ok
+      end
+
+      defimpl target: String do
+      end
+    end
+  end
+end
+
 Dry::Protocol.defimpl Protocols::Adder, target: NilClass do
   def add(_this, other)
     other
