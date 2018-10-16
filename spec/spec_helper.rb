@@ -147,6 +147,30 @@ module Protocols
   end
 end
 
+module Protocols
+  module Anno
+    include Dry::Protocol
+    include Dry::Annotation
+
+    defprotocol implicit_inheritance: true do
+      @spec[(This) :: (Sym)]
+      defmethod :foo1, :this
+      @spec[(This), (Str | Nil) :: (Arr)]
+      defmethod :foo2, :this, :opt
+
+      def foo1(this)
+        :ok
+      end
+      def foo2(this, name)
+        [:ok, name]
+      end
+
+      defimpl target: String do
+      end
+    end
+  end
+end
+
 Dry::Protocol.defimpl Protocols::Adder, target: NilClass do
   def add(_this, other)
     other

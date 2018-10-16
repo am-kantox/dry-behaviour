@@ -1,5 +1,6 @@
 require 'dry/behaviour/version'
 require 'dry/errors'
+require 'dry/behaviour/annotation'
 require 'dry/behaviour/black_tie'
 require 'dry/behaviour/cerberus'
 

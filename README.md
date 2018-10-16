@@ -104,6 +104,8 @@ end
 
 - raise meaningful errors on malformed implementation,
 - permit void `defimpl target: Foo` if the protocol allows implicit inheritance,
+- print informational message on protocol consolidation,
+-
 
 ### `0.9.0` :: Warning On Wrong Arity
 

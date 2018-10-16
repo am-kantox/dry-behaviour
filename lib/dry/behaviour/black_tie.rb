@@ -189,7 +189,7 @@ module Dry
       "  ⮩   Expected: %s".freeze
 
     PROTOCOL_CONSOLIDATED =
-      "ℹ️ Protocol %s was consolidated for %s [%s].".freeze
+      "\nℹ️  Protocol %s was consolidated for %s [%s].".freeze
 
     def self.Logger
       @logger ||= if Kernel.const_defined?('::Rails')
