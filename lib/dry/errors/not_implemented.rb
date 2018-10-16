@@ -26,6 +26,13 @@ module Dry
             " ⮩  Provided parameters types:\n" \
             " ⮩    “#{@details[:provided]}”\n" \
             " ⮩  Please consider providing a proper implementation."
+          when :orphan
+            "Implementation of “#{@proto}” for void target makes no sense.\n" \
+            " ⮩  Please specify `target:' argument in call to `defimpl'."
+          when :void
+            "Implementation of “#{@proto}” for #{@details[:target]} is void.\n" \
+            " ⮩  Please either use a block, or delegate method(s) to the target,\n" \
+            " ⮩    or use `implicit_inheritance: true' in call to `defprotocol'."
           else
             "Protocol “#{proto}” is invalid."
           end

@@ -100,6 +100,11 @@ end
 
 ## Changelog
 
+### `0.10.0` :: Protocol Consolidation
+
+- raise meaningful errors on malformed implementation,
+- permit void `defimpl target: Foo` if the protocol allows implicit inheritance,
+
 ### `0.9.0` :: Warning On Wrong Arity
 
 - many error reporting improvements,

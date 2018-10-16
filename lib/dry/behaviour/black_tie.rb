@@ -78,7 +78,10 @@ module Dry
     end
 
     def defimpl(protocol = nil, target: nil, delegate: [], map: {}, &λ)
-      raise if target.nil? || !block_given? && delegate.empty? && map.empty?
+      raise NotImplemented.new(:orphan, protocol || self) if target.nil?
+      raise NotImplemented.new(:void, protocol || self, target: target) if
+        !block_given? && delegate.empty? && map.empty? &&
+          !BlackTie.protocols[protocol || self][:__implicit_inheritance__]
 
       mds = normalize_map_delegates(delegate, map)
 
