@@ -89,7 +89,12 @@ module Dry
         mds.each(&DELEGATE_METHOD.curry[singleton_class])
         singleton_class.class_eval(&λ) if block_given? # block takes precedence
       end.tap do |mod|
-        protocol ? mod.extend(protocol) : POSTPONE_EXTEND.(mod, protocol = self)
+        if protocol
+          mod.extend(protocol)
+          BlackTie.Logger.info(PROTOCOL_CONSOLIDATED % [protocol.inspect, target, :inplace])
+        else
+          POSTPONE_EXTEND.(mod, protocol = self, target)
+        end
 
         mod.methods(false).tap do |meths|
           (NORMALIZE_KEYS.(protocol) - meths).each_with_object(meths) do |m, acc|
@@ -136,11 +141,12 @@ module Dry
       end
     end
 
-    POSTPONE_EXTEND = lambda do |target, protocol|
+    POSTPONE_EXTEND = lambda do |mod, protocol, target|
       TracePoint.new(:end) do |tp|
         if tp.self == protocol
-          target.extend protocol
+          mod.extend protocol
           tp.disable
+          BlackTie.Logger.info(PROTOCOL_CONSOLIDATED % [protocol.inspect, target, :postponed])
         end
       end.enable
     end
@@ -181,6 +187,9 @@ module Dry
       "  ⮩   %s#%s was implemented for %s with unexpected parameters.\n" \
       "  ⮩  Consider implementing interfaces exactly as they were declared.\n" \
       "  ⮩   Expected: %s".freeze
+
+    PROTOCOL_CONSOLIDATED =
+      "ℹ️ Protocol %s was consolidated for %s [%s].".freeze
 
     def self.Logger
       @logger ||= if Kernel.const_defined?('::Rails')
