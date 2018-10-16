@@ -74,6 +74,8 @@ module Dry
           end
           [type || PARAM_TYPES.include?(p) ? p : :req, p]
         end
+        binding.pry if @annotations
+      puts("★★★★★★ " << @annotations.inspect) if @annotations
       BlackTie.protocols[self][name] = params
     end
 
@@ -82,6 +84,10 @@ module Dry
       raise NotImplemented.new(:void, protocol || self, target: target) if
         !block_given? && delegate.empty? && map.empty? &&
           !BlackTie.protocols[protocol || self][:__implicit_inheritance__]
+
+      BlackTie.Logger.warn(
+        ALREADY_COSOLIDATED % [Dry::BlackTie.proto_caller, protocol.inspect, target]
+      ) unless BlackTie.implementations[protocol][target].empty?
 
       mds = normalize_map_delegates(delegate, map)
 
@@ -187,6 +193,12 @@ module Dry
       "  ⮩   %s#%s was implemented for %s with unexpected parameters.\n" \
       "  ⮩  Consider implementing interfaces exactly as they were declared.\n" \
       "  ⮩   Expected: %s".freeze
+
+    ALREADY_COSOLIDATED =
+      "\n🚨️  DEPRECATED →  %s\n" \
+      "  ⮩  Protocol %s was already consolidated for %s\n" \
+      "  ⮩  The re-implementation of protocols will be disabled in 1.0.\n" \
+      "  ⮩   Please consider move the implementation into one place.".freeze
 
     PROTOCOL_CONSOLIDATED =
       "\nℹ️  Protocol %s was consolidated for %s [%s].".freeze
