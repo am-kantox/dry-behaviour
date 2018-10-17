@@ -1,26 +1,28 @@
 module Dry
   class AnnotationImpl < BasicObject
     def initialize
+      @spec = []
       @specs = []
       @types = {args: [], result: []}
     end
 
-    def __types__
-      @types
+    def 📝 &λ
+      return @spec if λ.nil?
+      (yield @spec).tap { @spec.clear }
     end
 
-    def __specs__
+    def 📝📝
       @specs
+    end
+
+    def 📇
+      @types
     end
 
     def to_s
       @specs.reject do |type|
         %i[args result].all? { |key| type[key].empty? }
       end.map do |type|
-        %i[args result].each do |key|
-          type[key] << %i[Any] if type[key].empty?
-        end
-
         "@spec[" <<
           type.
             values.
@@ -47,8 +49,8 @@ module Dry
       self
     end
 
-    def method_missing(name, *args, &λ)
-      name.to_s[0][/[A-Z]/] ? (@types[:args] << [name]) : super
+    def 🖊️(name, *args, &λ)
+      @types[:args] << [args.empty? ? name : [name, args, λ]]
       self
     end
   end
@@ -59,17 +61,23 @@ module Dry
       base.instance_variable_set(:@annotations, annotations)
       base.instance_variable_set(:@spec, ->(*args) {
         impl = args.first
+        last_spec = impl.📇.map { |k, v| [k, v.dup] }.to_h
 
-        base.instance_variable_get(:@annotations).__specs__ <<
-          impl.__types__.map { |k, v| [k, v.dup] }.to_h
+        # TODO WARN IF SPEC IS EMPTY
+        %i[args result].each do |key|
+          last_spec[key] << %i[any] if last_spec[key].empty?
+        end
 
-        impl.__specs__ << impl.__types__
-        impl.__types__.each { |k, v| v.clear }
+        base.instance_variable_get(:@annotations).📝📝 << last_spec
+        base.instance_variable_get(:@annotations).📝.replace([last_spec])
+
+        impl.📝📝 << last_spec
+        impl.📇.each { |k, v| v.clear }
       })
 
       base.instance_eval do
-        def const_missing(name)
-          @annotations.__send__(name)
+        def method_missing(name, *args, &λ)
+          @annotations.__send__(:🖊️, name, *args, &λ)
         end
       end
     end

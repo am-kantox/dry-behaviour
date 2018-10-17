@@ -74,8 +74,7 @@ module Dry
           end
           [type || PARAM_TYPES.include?(p) ? p : :req, p]
         end
-        binding.pry if @annotations
-      puts("★★★★★★ " << @annotations.inspect) if @annotations
+      puts("★★★★★★ " << [@annotations.📝, params].inspect) if @annotations
       BlackTie.protocols[self][name] = params
     end
 

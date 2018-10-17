@@ -153,9 +153,9 @@ module Protocols
     include Dry::Annotation
 
     defprotocol implicit_inheritance: true do
-      @spec[(This) :: (Sym | Nil)]
+      @spec[(this) :: (symbol | nil_class)]
       defmethod :foo1, :this
-      @spec[(This), (Str | Nil) :: (Arr)]
+      @spec[(this), (string | nil_class) :: (array)]
       defmethod :foo2, :this, :opt
 
       def foo1(this)
