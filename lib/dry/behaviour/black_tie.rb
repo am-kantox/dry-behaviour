@@ -20,7 +20,7 @@ module Dry
             require 'logger'
             Logger.new($stdout)
           end
-        @logger ? @logger : Class.new { def warn(*); end }
+        @logger ? @logger : Class.new { def warn(*); end }.new
       end
 
       def protocols
