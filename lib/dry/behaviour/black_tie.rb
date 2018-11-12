@@ -6,6 +6,22 @@ module Dry
   # rubocop:disable Style/MethodName
   module BlackTie
     class << self
+      def proto_caller
+        caller.drop_while do |line|
+          line =~ %r[dry-behaviour/lib/dry/behaviour]
+        end.first
+      end
+
+      def Logger
+        @logger ||=
+          if Kernel.const_defined?('::Rails')
+            Rails.logger
+          else
+            require 'logger'
+            Logger.new($stdout)
+          end
+      end
+
       def protocols
         @protocols ||= Hash.new { |h, k| h[k] = h.dup.clear }
       end
@@ -146,12 +162,6 @@ module Dry
       BlackTie.protocols[protocol].keys.reject { |k| k.to_s =~ /\A__.*__\z/ }
     end
 
-    def self.proto_caller
-      caller.drop_while do |line|
-        line =~ %r[dry-behaviour/lib/dry/behaviour]
-      end.first
-    end
-
     IMPLICIT_DELEGATE_DEPRECATION =
       "\n🚨️  DEPRECATED →  %s\n" \
       "  ⮩  Implicit delegation to the target class will be removed in 1.0\n" \
@@ -178,15 +188,6 @@ module Dry
       "  ⮩   %s#%s was implemented for %s with unexpected parameters.\n" \
       "  ⮩  Consider implementing interfaces exactly as they were declared.\n" \
       "  ⮩   Expected: %s".freeze
-
-    def self.Logger
-      @logger ||= if Kernel.const_defined?('::Rails')
-                    Rails.logger
-                  else
-                    require 'logger'
-                    Logger.new($stdout)
-                  end
-    end
 
     private
 
