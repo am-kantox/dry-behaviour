@@ -1,5 +1,5 @@
 module Dry
   module Behaviour
-    VERSION = '0.10.3'.freeze
+    VERSION = '0.11.0'.freeze
   end
 end
