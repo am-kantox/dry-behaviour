@@ -125,6 +125,7 @@ module Dry
           target = [target] unless target.is_a?(Array)
           target.each do |tgt|
             ok =
+              mds.map(&:first).include?(m) ||
               [
                 BlackTie.protocols[protocol][m],
                 mod.method(m).parameters.reject { |_, v| v.to_s[/\A♿_/] }

@@ -130,6 +130,7 @@ module Protocols
       defmethod :foo0
       defmethod :foo1, :this
       defmethod :foo2, :this, :req, :opt, :req, :rest, :keyrest, :block
+      defmethod :to_i, :this
 
       def foo0(this)
         :ok
@@ -141,7 +142,7 @@ module Protocols
         :ok
       end
 
-      defimpl target: String do
+      defimpl target: String, delegate: [:to_i] do
       end
     end
   end
