@@ -124,12 +124,12 @@ module Dry
         end.each do |m|
           target = [target] unless target.is_a?(Array)
           target.each do |tgt|
+            params = mod.method(m).parameters.reject { |_, v| v.to_s[/\A♿_/] }
+            proto = BlackTie.protocols[protocol]
             ok =
               mds.map(&:first).include?(m) ||
-              [
-                BlackTie.protocols[protocol][m],
-                mod.method(m).parameters.reject { |_, v| v.to_s[/\A♿_/] }
-              ].map(&:first).reduce(:==)
+              ((proto[m] == {} || proto[:__implicit_inheritance__]) && [[:req], [:rest]].include?(params.map(&:first))) ||
+              [proto[m], params].map { |args| args.map(&:first) }.reduce(:==)
 
             # TODO[1.0] raise NotImplemented(:arity)
             BlackTie.Logger.warn(

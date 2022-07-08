@@ -129,7 +129,7 @@ module Protocols
     defprotocol implicit_inheritance: true do
       defmethod :foo0
       defmethod :foo1, :this
-      defmethod :foo2, :this, :req, :opt, :req, :rest, :keyrest, :block
+      defmethod :foo2, :this, :req1, :req2, :rest, :keyrest, :block
       defmethod :to_i, :this
 
       def foo0(this)
@@ -138,7 +138,7 @@ module Protocols
       def foo1(this)
         :ok
       end
-      def foo2(this)
+      def foo2(this, req1, req2, *rest, **keyrest, &λ)
         :ok
       end
 

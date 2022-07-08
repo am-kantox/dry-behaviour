@@ -88,7 +88,7 @@ describe Dry::Behaviour do
   it 'checks arity of the impleemntation' do
     expect(Protocols::Arity.foo0('42')).to eq(:ok)
     expect(Protocols::Arity.foo1('42')).to eq(:ok)
-    expect(Protocols::Arity.foo2('42')).to eq(:ok)
+    expect(Protocols::Arity.foo2('42', '42', '42', '42', '42', foo: :bar)).to eq(:ok)
   end
 end
 # rubocop:enable Metrics/BlockLength
