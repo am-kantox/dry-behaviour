@@ -89,7 +89,7 @@ module Dry
             BlackTie.Logger.warn(UNKNOWN_TYPE_DECLARATION % [Dry::BlackTie.proto_caller, type, self.inspect, name])
             type = nil
           end
-          [type || PARAM_TYPES.include?(p) ? p : :req, p]
+          [type || (PARAM_TYPES.include?(p) ? p : :req), p]
         end
       BlackTie.protocols[self][name] = params
     end
@@ -143,7 +143,7 @@ module Dry
     end
     module_function :defimpl
 
-    PARAM_TYPES = %i[req opt rest keyrest block]
+    PARAM_TYPES = %i[req opt rest key keyrest block key]
 
     DELEGATE_METHOD = lambda do |klazz, (source, target)|
       klazz.class_eval do

@@ -129,7 +129,7 @@ module Protocols
     defprotocol implicit_inheritance: true do
       defmethod :foo0
       defmethod :foo1, :this
-      defmethod :foo2, :this, :req1, :req2, :rest, :keyrest, :block
+      defmethod :foo2, :this, :req1, :req2, [:rest_params, :rest], [:keyrest_params, :keyrest], [:λ, :block]
       defmethod :to_i, :this
 
       def foo0(this)
@@ -138,7 +138,7 @@ module Protocols
       def foo1(this)
         :ok
       end
-      def foo2(this, req1, req2, *rest, **keyrest, &λ)
+      def foo2(this, req1, req2, *rest_params, **keyrest_params, &λ)
         :ok
       end
 
@@ -172,6 +172,43 @@ Dry::Protocol.defimpl Protocols::Adder, target: NilClass do
   ::BACKTRACE_LINE = __LINE__ + 1
   def crossreferenced(this)
     add(this, add_default(5))
+  end
+end
+
+################################################################################
+
+module Protocols
+  module LaTiaPascuala
+    include Dry::Protocol
+
+    defprotocol implicit_inheritance: true do
+      defmethod :method_with_defaulted_argument, :this, [:foo_opt, :opt]
+      defmethod :method_with_defaulted_keyword_argument, :this, [:foo_key, :key]
+
+      def method_with_defaulted_argument(this, foo_opt = :super); foo_opt; end
+      def method_with_defaulted_keyword_argument(this, foo_key: :super); foo_key; end
+
+      defimpl target: [NilClass] do
+        # inherit implementation
+      end
+
+      defimpl target: [TrueClass] do
+        def method_with_defaulted_argument(this, foo_opt = :overriden); foo_opt end
+        def method_with_defaulted_keyword_argument(this, foo_key: :overriden); foo_key end
+      end
+
+      defimpl target: [FalseClass] do
+        # This effectively changes the signature making it required so we should see a warning
+        def method_with_defaulted_argument(this)
+          raise 'does matter'
+        end
+
+        # This effectively changes the signature making it required so the warning makes sense
+        def method_with_defaulted_keyword_argument(this, foo_key:)
+          raise 'does matter'
+        end
+      end
+    end
   end
 end
 
