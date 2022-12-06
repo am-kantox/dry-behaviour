@@ -92,19 +92,22 @@ describe Dry::Behaviour do
   end
 
   it 'works for default and keyword args' do
-    puts Protocols::LaTiaPascuala.methods(false).map { |m| [m, Protocols::LaTiaPascuala.method(m).parameters] }.inspect
-
     expect(Protocols::LaTiaPascuala.method_with_defaulted_argument(nil)).to eq :super
     expect(Protocols::LaTiaPascuala.method_with_defaulted_keyword_argument(nil)).to eq :super
+    expect(Protocols::LaTiaPascuala.method_with_required_keyword_argument(nil, foo_key: 42)).to eq 42
 
     expect(Protocols::LaTiaPascuala.method_with_defaulted_argument(true)).to eq :overriden
     expect(Protocols::LaTiaPascuala.method_with_defaulted_keyword_argument(true)).to eq :overriden
+    expect(Protocols::LaTiaPascuala.method_with_required_keyword_argument(true, foo_key: 42)).to eq 42
 
-    expect { Protocols::LaTiaPascuala.method_with_defaulted_argument(false) } .to raise_error(
-      Dry::Protocol::NotImplemented, / ⮩    “does matter/
+    expect { Protocols::LaTiaPascuala.method_with_defaulted_argument(false) }.to raise_error(
+      Dry::Protocol::NotImplemented, / ⮩    “does matter \(defaulted\)/
     )
-    expect { Protocols::LaTiaPascuala.method_with_defaulted_keyword_argument(false, foo_key: 42) } .to raise_error(
-      Dry::Protocol::NotImplemented, / ⮩    “does matter/
+    expect { Protocols::LaTiaPascuala.method_with_defaulted_keyword_argument(false, foo_key: 42) }.to raise_error(
+      Dry::Protocol::NotImplemented, / ⮩    “does matter \(defaulted keyword\)/
+    )
+    expect { Protocols::LaTiaPascuala.method_with_required_keyword_argument(false, foo_key: 42) }.to raise_error(
+      Dry::Protocol::NotImplemented, / ⮩    “does matter \(required keyword\)/
     )
   end
 end

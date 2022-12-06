@@ -184,9 +184,11 @@ module Protocols
     defprotocol implicit_inheritance: true do
       defmethod :method_with_defaulted_argument, :this, [:foo_opt, :opt]
       defmethod :method_with_defaulted_keyword_argument, :this, [:foo_key, :key]
+      defmethod :method_with_required_keyword_argument, :this, [:foo_key, :keyreq]
 
       def method_with_defaulted_argument(this, foo_opt = :super); foo_opt; end
       def method_with_defaulted_keyword_argument(this, foo_key: :super); foo_key; end
+      def method_with_required_keyword_argument(this, foo_key:); foo_key; end
 
       defimpl target: [NilClass] do
         # inherit implementation
@@ -195,17 +197,22 @@ module Protocols
       defimpl target: [TrueClass] do
         def method_with_defaulted_argument(this, foo_opt = :overriden); foo_opt end
         def method_with_defaulted_keyword_argument(this, foo_key: :overriden); foo_key end
+        def method_with_required_keyword_argument(this, foo_key:); foo_key; end
       end
 
       defimpl target: [FalseClass] do
         # This effectively changes the signature making it required so we should see a warning
         def method_with_defaulted_argument(this)
-          raise 'does matter'
+          raise 'does matter (defaulted)'
         end
 
         # This effectively changes the signature making it required so the warning makes sense
         def method_with_defaulted_keyword_argument(this, foo_key:)
-          raise 'does matter'
+          raise 'does matter (defaulted keyword)'
+        end
+
+        def method_with_required_keyword_argument(this, foo_key: 42)
+          raise 'does matter (required keyword)'
         end
       end
     end

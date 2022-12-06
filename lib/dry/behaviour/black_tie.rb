@@ -54,15 +54,20 @@ module Dry
         end.reject(&:nil?).first
       end
 
-      BlackTie.protocols[self].each do |method, *_| # FIXME: CHECK ARITY HERE
-        singleton_class.send :define_method, method do |receiver = nil, *args|
+      BlackTie.protocols[self].each do |method, *args| # FIXME: CHECK ARITY HERE
+        singleton_class.send :define_method, method do |receiver = nil, *args, **kwargs|
           impl = implementation_for(receiver)
           raise Dry::Protocol::NotImplemented.new(
             :protocol, inspect,
             method: method, receiver: receiver, args: args, self: self
           ) unless impl
           begin
-            impl[method].(*args.unshift(receiver))
+            # [AM] [v1] [FIXME] for modern rubies `if` is redundant
+            if kwargs.empty?
+              impl[method].(*args.unshift(receiver))
+            else
+              impl[method].(*args.unshift(receiver), **kwargs)
+            end
           rescue => e
             raise Dry::Protocol::NotImplemented.new(
                 :nested, inspect,
@@ -109,8 +114,13 @@ module Dry
           (NORMALIZE_KEYS.(protocol) - meths).each_with_object(meths) do |m, acc|
             if BlackTie.protocols[protocol][:__implicit_inheritance__]
               mod.singleton_class.class_eval do
-                define_method m do |this, *♿_args, &♿_λ|
-                  super(this, *♿_args, &♿_λ)
+                define_method m do |this, *♿_args, **♿_kwargs, &♿_λ|
+                  # [AM] [v1] [FIXME] for modern rubies `if` is redundant
+                  if ♿_kwargs.empty?
+                    super(this, *♿_args, &♿_λ)
+                  else
+                    super(this, *♿_args, **♿_kwargs, &♿_λ)
+                  end
                 end
               end
             else
@@ -143,7 +153,7 @@ module Dry
     end
     module_function :defimpl
 
-    PARAM_TYPES = %i[req opt rest key keyrest block key]
+    PARAM_TYPES = %i[req opt rest key keyrest keyreq block]
 
     DELEGATE_METHOD = lambda do |klazz, (source, target)|
       klazz.class_eval do
