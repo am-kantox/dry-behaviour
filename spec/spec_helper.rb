@@ -182,10 +182,12 @@ module Protocols
     include Dry::Protocol
 
     defprotocol implicit_inheritance: true do
+      defmethod :method_with_hash_argument, :this, :foo_hash
       defmethod :method_with_defaulted_argument, :this, [:foo_opt, :opt]
       defmethod :method_with_defaulted_keyword_argument, :this, [:foo_key, :key]
       defmethod :method_with_required_keyword_argument, :this, [:foo_key, :keyreq]
 
+      def method_with_hash_argument(this, foo_hash); foo_hash; end
       def method_with_defaulted_argument(this, foo_opt = :super); foo_opt; end
       def method_with_defaulted_keyword_argument(this, foo_key: :super); foo_key; end
       def method_with_required_keyword_argument(this, foo_key:); foo_key; end
@@ -195,12 +197,14 @@ module Protocols
       end
 
       defimpl target: [TrueClass] do
+        def method_with_hash_argument(this, foo_hash); foo_hash.merge(foo: TrueClass); end
         def method_with_defaulted_argument(this, foo_opt = :overriden); foo_opt end
         def method_with_defaulted_keyword_argument(this, foo_key: :overriden); foo_key end
         def method_with_required_keyword_argument(this, foo_key:); foo_key; end
       end
 
       defimpl target: [FalseClass] do
+        def method_with_hash_argument(this, foo_hash); foo_hash.merge(foo: FalseClass); end
         # This effectively changes the signature making it required so we should see a warning
         def method_with_defaulted_argument(this)
           raise 'does matter (defaulted)'
