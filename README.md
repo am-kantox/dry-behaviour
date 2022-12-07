@@ -60,6 +60,45 @@ expect(Protocols::Adder.add(nil, 10)).to eq(10)
 expect(Protocols::Adder.add_default(1)).to eq(6)
 ```
 
+### Arguments types
+
+Normally, one would use a simple notation to declare a method. It includes `:this` receiver
+in te very first position and some optional required arguments afterward.
+
+```ruby
+  defmethod :add, :this, :addend
+  ...
+  defimpl ... do
+    def add(this, addend); this + addend; end
+  end
+```
+
+If the argument is not generic (optional, or splatted, or keyword,) its type must be explicitly
+specified in the protocol definition as shown below.
+
+```ruby
+  defprotocol implicit_inheritance: true do
+    defmethod :with_def_argument, :this, [:foo_opt, :opt]
+    defmethod :with_def_keyword_argument, :this, [:foo_key, :key]
+    defmethod :with_req_keyword_argument, :this, [:foo_key, :keyreq]
+
+    def with_def_argument(this, foo_opt = :super); foo_opt; end
+    def with_def_keyword_argument(this, foo_key: :super); foo_key; end
+    def with_req_keyword_argument(this, foo_key:); foo_key; end
+  ...
+```
+
+That said, `:addend` argument declaration is a syntactic sugar for `[:addend, :req]`.
+Possible values for the type are:
+
+```ruby
+PARAM_TYPES = %i[req opt rest key keyrest keyreq block]
+```
+
+Please note, that the signature of the method and its implementation must exactly match.
+One cannot declare a method to have a `keyreq` argument and then make it defaulted in the
+implementation. That is done by design.
+
 ## Guards
 
 Starting with `v0.5.0` we support multiple function clauses and guards.

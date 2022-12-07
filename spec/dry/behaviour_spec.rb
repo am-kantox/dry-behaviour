@@ -79,9 +79,9 @@ describe Dry::Behaviour do
 
   it 'allows implicit protocol inheritance' do
     expect(Protocols::ParentOK.respond_to?(:foo)).to be_truthy
-    expect { Protocols::ParentOK.foo('42') } .not_to raise_error
-    expect { Protocols::ParentKO.foo('42') } .to raise_error(/undefined method `foo' for "42"/)
-    expect { Protocols::ParentOKImplicit.foo('42') } .not_to raise_error
+    expect { Protocols::ParentOK.foo('42') }.not_to raise_error
+    expect { Protocols::ParentKO.foo('42') }.to raise_error(/undefined method `foo' for "42"/)
+    expect { Protocols::ParentOKImplicit.foo('42') }.not_to raise_error
     expect(Protocols::ParentOKImplicit.foo('42')).to eq(:ok)
   end
 
@@ -89,6 +89,33 @@ describe Dry::Behaviour do
     expect(Protocols::Arity.foo0('42')).to eq(:ok)
     expect(Protocols::Arity.foo1('42')).to eq(:ok)
     expect(Protocols::Arity.foo2('42', '42', '42', '42', '42', foo: :bar)).to eq(:ok)
+  end
+
+  it 'works for default and keyword args' do
+    expect(Protocols::LaTiaPascuala.method_with_hash_argument(nil, foo: :bar)).to eq(foo: :bar)
+    expect(Protocols::LaTiaPascuala.method_with_defaulted_argument(nil)).to eq :super
+    expect(Protocols::LaTiaPascuala.method_with_defaulted_keyword_argument(nil)).to eq :super
+    expect(Protocols::LaTiaPascuala.method_with_required_keyword_argument(nil, foo_key: 42)).to eq 42
+
+    expect(Protocols::LaTiaPascuala.method_with_hash_argument({hash: :yes}, foo: :bar)).to eq(hash: :yes, foo: :bar)
+    expect(Protocols::LaTiaPascuala.method_with_defaulted_argument(hash: :yes)).to eq(hash: :yes, default: :overriden)
+    expect(Protocols::LaTiaPascuala.method_with_defaulted_keyword_argument(Hash[:hash, :yes])).to eq(hash: :yes, default: :overriden)
+    expect(Protocols::LaTiaPascuala.method_with_required_keyword_argument({hash: :yes}, foo_key: 42)).to eq(hash: :yes, default: 42)
+
+    expect(Protocols::LaTiaPascuala.method_with_hash_argument(true, foo: :bar)).to eq(foo: TrueClass)
+    expect(Protocols::LaTiaPascuala.method_with_defaulted_argument(true)).to eq :overriden
+    expect(Protocols::LaTiaPascuala.method_with_defaulted_keyword_argument(true)).to eq :overriden
+    expect(Protocols::LaTiaPascuala.method_with_required_keyword_argument(true, foo_key: 42)).to eq 42
+
+    expect { Protocols::LaTiaPascuala.method_with_defaulted_argument(false) }.to raise_error(
+      Dry::Protocol::NotImplemented, / ⮩    “does matter \(defaulted\)/
+    )
+    expect { Protocols::LaTiaPascuala.method_with_defaulted_keyword_argument(false, foo_key: 42) }.to raise_error(
+      Dry::Protocol::NotImplemented, / ⮩    “does matter \(defaulted keyword\)/
+    )
+    expect { Protocols::LaTiaPascuala.method_with_required_keyword_argument(false, foo_key: 42) }.to raise_error(
+      Dry::Protocol::NotImplemented, / ⮩    “does matter \(required keyword\)/
+    )
   end
 end
 # rubocop:enable Metrics/BlockLength
