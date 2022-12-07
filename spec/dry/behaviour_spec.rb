@@ -97,6 +97,11 @@ describe Dry::Behaviour do
     expect(Protocols::LaTiaPascuala.method_with_defaulted_keyword_argument(nil)).to eq :super
     expect(Protocols::LaTiaPascuala.method_with_required_keyword_argument(nil, foo_key: 42)).to eq 42
 
+    expect(Protocols::LaTiaPascuala.method_with_hash_argument({hash: :yes}, foo: :bar)).to eq(hash: :yes, foo: :bar)
+    expect(Protocols::LaTiaPascuala.method_with_defaulted_argument(hash: :yes)).to eq(hash: :yes, default: :overriden)
+    expect(Protocols::LaTiaPascuala.method_with_defaulted_keyword_argument(Hash[:hash, :yes])).to eq(hash: :yes, default: :overriden)
+    expect(Protocols::LaTiaPascuala.method_with_required_keyword_argument({hash: :yes}, foo_key: 42)).to eq(hash: :yes, default: 42)
+
     expect(Protocols::LaTiaPascuala.method_with_hash_argument(true, foo: :bar)).to eq(foo: TrueClass)
     expect(Protocols::LaTiaPascuala.method_with_defaulted_argument(true)).to eq :overriden
     expect(Protocols::LaTiaPascuala.method_with_defaulted_keyword_argument(true)).to eq :overriden

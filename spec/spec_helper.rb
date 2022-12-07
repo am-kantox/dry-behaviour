@@ -196,6 +196,13 @@ module Protocols
         # inherit implementation
       end
 
+      defimpl target: [Hash] do
+        def method_with_hash_argument(this, foo_hash); this.merge(foo_hash); end
+        def method_with_defaulted_argument(this, foo_opt = :overriden); this.merge(default: foo_opt) end
+        def method_with_defaulted_keyword_argument(this, foo_key: :overriden); this.merge(default: foo_key) end
+        def method_with_required_keyword_argument(this, foo_key:); this.merge(default: foo_key); end
+      end
+
       defimpl target: [TrueClass] do
         def method_with_hash_argument(this, foo_hash); foo_hash.merge(foo: TrueClass); end
         def method_with_defaulted_argument(this, foo_opt = :overriden); foo_opt end

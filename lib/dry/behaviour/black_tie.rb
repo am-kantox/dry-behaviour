@@ -54,13 +54,15 @@ module Dry
         end.reject(&:nil?).first
       end
 
-      BlackTie.protocols[self].each do |method, *args| # FIXME: CHECK ARITY HERE
-        singleton_class.send :define_method, method do |receiver = nil, *args, **kwargs|
+      BlackTie.protocols[self].each do |method, *_m_args, **_m_kwargs| # FIXME: CHECK ARITY HERE
+        singleton_class.send :define_method, method do |receiver, *args, **kwargs|
           impl = implementation_for(receiver)
+
           raise Dry::Protocol::NotImplemented.new(
             :protocol, inspect,
             method: method, receiver: receiver, args: args, self: self
           ) unless impl
+
           begin
             # [AM] [v1] [FIXME] for modern rubies `if` is redundant
             if kwargs.empty?
