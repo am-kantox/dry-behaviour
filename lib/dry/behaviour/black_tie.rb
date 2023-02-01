@@ -8,7 +8,7 @@ module Dry
     class << self
       def proto_caller
         caller.drop_while do |line|
-          line =~ %r[dry-behaviour/lib/dry/behaviour]
+          line =~ %r{dry-behaviour/lib/dry/behaviour}
         end.first
       end
 
@@ -20,7 +20,7 @@ module Dry
             require 'logger'
             Logger.new($stdout)
           end
-        @logger ? @logger : Class.new { def warn(*); end }.new
+        @logger || Class.new { def warn(*); end }.new
       end
 
       def protocols
@@ -33,8 +33,8 @@ module Dry
     end
 
     def defprotocol(implicit_inheritance: false, &λ)
-      raise ::Dry::Protocol::DuplicateDefinition.new(self) if BlackTie.protocols.key?(self)
-      raise ::Dry::Protocol::MalformedDefinition.new(self) unless block_given?
+      raise ::Dry::Protocol::DuplicateDefinition, self if BlackTie.protocols.key?(self)
+      raise ::Dry::Protocol::MalformedDefinition, self unless block_given?
 
       BlackTie.protocols[self][:__implicit_inheritance__] = !!implicit_inheritance
 
@@ -55,13 +55,23 @@ module Dry
       end
 
       BlackTie.protocols[self].each do |method, *_m_args, **_m_kwargs| # FIXME: CHECK ARITY HERE
-        singleton_class.send :define_method, method do |receiver, *args, **kwargs|
+        # singleton_class.send :define_method, method do |receiver, *args, **kwargs|
+        singleton_class.send :define_method, method do |*args, **kwargs|
+          if args == []
+            receiver = kwargs
+            kwargs = {}
+          else
+            receiver, *args = args
+          end
+
           impl = implementation_for(receiver)
 
-          raise Dry::Protocol::NotImplemented.new(
-            :protocol, inspect,
-            method: method, receiver: receiver, args: args, self: self
-          ) unless impl
+          unless impl
+            raise Dry::Protocol::NotImplemented.new(
+              :protocol, inspect,
+              method: method, receiver: receiver, args: args, self: self
+            )
+          end
 
           begin
             # [AM] [v1] [FIXME] for modern rubies `if` is redundant
@@ -70,12 +80,12 @@ module Dry
             else
               impl[method].(*args.unshift(receiver), **kwargs)
             end
-          rescue => e
+          rescue StandardError => e
             raise Dry::Protocol::NotImplemented.new(
-                :nested, inspect,
-                cause: e,
-                method: method, receiver: receiver, args: args, impl: impl, self: self
-              )
+              :nested, inspect,
+              cause: e,
+              method: method, receiver: receiver, args: args, impl: impl, self: self
+            )
           end
         end
       end
@@ -87,13 +97,13 @@ module Dry
 
     def defmethod(name, *params)
       if params.size.zero? || params.first.is_a?(Array) && params.first.last != :req
-        BlackTie.Logger.warn(IMPLICIT_RECEIVER_DECLARATION % [Dry::BlackTie.proto_caller, self.inspect, name])
+        BlackTie.Logger.warn(format(IMPLICIT_RECEIVER_DECLARATION, Dry::BlackTie.proto_caller, inspect, name))
         params.unshift(:this)
       end
       params =
         params.map do |p, type|
           if type && !PARAM_TYPES.include?(type)
-            BlackTie.Logger.warn(UNKNOWN_TYPE_DECLARATION % [Dry::BlackTie.proto_caller, type, self.inspect, name])
+            BlackTie.Logger.warn(format(UNKNOWN_TYPE_DECLARATION, Dry::BlackTie.proto_caller, type, inspect, name))
             type = nil
           end
           [type || (PARAM_TYPES.include?(p) ? p : :req), p]
@@ -127,7 +137,7 @@ module Dry
               end
             else
               BlackTie.Logger.warn(
-                IMPLICIT_DELEGATE_DEPRECATION % [Dry::BlackTie.proto_caller, protocol.inspect, m, target]
+                format(IMPLICIT_DELEGATE_DEPRECATION, Dry::BlackTie.proto_caller, protocol.inspect, m, target)
               )
               DELEGATE_METHOD.(mod.singleton_class, [m] * 2)
             end
@@ -140,13 +150,17 @@ module Dry
             proto = BlackTie.protocols[protocol]
             ok =
               mds.map(&:first).include?(m) ||
-              ((proto[m] == {} || proto[:__implicit_inheritance__]) && [[:req], [:rest]].include?(params.map(&:first))) ||
+              ((proto[m] == {} || proto[:__implicit_inheritance__]) && [[:req],
+                                                                        [:rest]].include?(params.map(&:first))) ||
               [proto[m], params].map { |args| args.map(&:first) }.reduce(:==)
 
             # TODO[1.0] raise NotImplemented(:arity)
-            BlackTie.Logger.warn(
-              WRONG_PARAMETER_DECLARATION % [Dry::BlackTie.proto_caller, protocol.inspect, m, target, BlackTie.protocols[protocol][m].map(&:first)]
-            ) unless ok
+            unless ok
+              BlackTie.Logger.warn(
+                format(WRONG_PARAMETER_DECLARATION, Dry::BlackTie.proto_caller, protocol.inspect, m, target,
+                       BlackTie.protocols[protocol][m].map(&:first))
+              )
+            end
 
             BlackTie.implementations[protocol][tgt][m] = mod.method(m).to_proc
           end
@@ -188,7 +202,7 @@ module Dry
       "\n⚠️  TOO IMPLICIT →  %s\n" \
       "  ⮩  Implicit declaration of `this' parameter in `defmethod'.\n" \
       "  ⮩   Whilst it’s allowed, we strongly encourage to explicitly declare it\n" \
-      "  ⮩   in call to %s#defmethod(%s).".freeze
+      '  ⮩   in call to %s#defmethod(%s).'.freeze
 
     UNKNOWN_TYPE_DECLARATION =
       "\n⚠️  UNKNOWN TYPE →  %s\n" \
@@ -201,7 +215,7 @@ module Dry
       "  ⮩  Wrong parameters declaration will be removed in 1.0\n" \
       "  ⮩   %s#%s was implemented for %s with unexpected parameters.\n" \
       "  ⮩  Consider implementing interfaces exactly as they were declared.\n" \
-      "  ⮩   Expected: %s".freeze
+      '  ⮩   Expected: %s'.freeze
 
     private
 
